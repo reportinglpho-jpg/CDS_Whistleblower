@@ -1,0 +1,2153 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CDS Whistleblower & Complaint Management System</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts: Prompt & Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chart.js for Dashboard -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- SheetJS (xlsx-js-style) for Styled Excel Export -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Prompt', 'Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        centralRed: '#E11D48',
+                        centralDarkRed: '#BE123C',
+                        centralNavy: '#0F172A',
+                        centralSlate: '#1E293B',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Prompt', 'Inter', sans-serif; }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        /* Print Styles for Official PDF/Print Export */
+        @media print {
+            body * { visibility: hidden; }
+            #print-area, #print-area * { visibility: visible; }
+            #print-area {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                padding: 20px;
+                background: white !important;
+                color: black !important;
+            }
+            .no-print { display: none !important; }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 antialiased overflow-x-hidden">
+
+    <!-- LOGIN OVERLAY MODAL -->
+    <div id="login-modal" class="fixed inset-0 bg-gray-900 bg-opacity-80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 border-t-4 border-centralRed transform transition-all">
+            <div class="text-center mb-6">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-50 text-centralRed mb-4">
+                    <i class="fa-solid fa-shield-halved text-3xl"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-gray-900">CDS Whistleblower</h2>
+                <p class="text-sm text-gray-500 mt-1">Central Department Store - Complaint Management</p>
+            </div>
+            
+            <form id="login-form" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-gray-600 mb-1">ชื่อผู้ใช้งาน (Username)</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400"><i class="fa-solid fa-user"></i></span>
+                        <input type="text" id="login-username" required class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-centralRed focus:outline-none text-sm" placeholder="กรอกชื่อผู้ใช้งาน">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-gray-600 mb-1">รหัสผ่าน (Password)</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400"><i class="fa-solid fa-lock"></i></span>
+                        <input type="password" id="login-password" required class="w-full pl-10 pr-10 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-centralRed focus:outline-none text-sm" placeholder="กรอกรหัสผ่าน">
+                        <button type="button" onclick="toggleLoginPassword()" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none">
+                            <i id="login-eye-icon" class="fa-solid fa-eye text-sm"></i>
+                        </button>
+                    </div>
+                </div>
+                <div id="login-error" class="text-red-600 text-xs text-center hidden"></div>
+                <button type="submit" class="w-full bg-centralRed hover:bg-centralDarkRed text-white font-medium py-2.5 rounded-lg transition duration-200 shadow-md">
+                    เข้าสู่ระบบ (Sign In)
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- CUSTOM NOTIFICATION MODAL (Replaces alert/confirm) -->
+    <div id="toast-modal" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
+        <div class="bg-gray-900 text-white px-6 py-3.5 rounded-xl shadow-xl flex items-center space-x-3 border-l-4 border-centralRed">
+            <i id="toast-icon" class="fa-solid fa-circle-check text-green-400 text-lg"></i>
+            <span id="toast-message" class="text-sm font-medium">ดำเนินการสำเร็จ</span>
+        </div>
+    </div>
+
+    <!-- CONFIRMATION MODAL -->
+    <div id="confirm-modal" class="fixed inset-0 bg-gray-900 bg-opacity-60 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-xl max-w-sm w-full p-6">
+            <div class="flex items-center space-x-3 text-red-600 mb-3">
+                <i class="fa-solid fa-triangle-exclamation text-2xl"></i>
+                <h3 class="text-lg font-bold text-gray-900" id="confirm-title">ยืนยันการลบข้อมูล</h3>
+            </div>
+            <p class="text-sm text-gray-600 mb-6" id="confirm-text">คุณแน่ใจหรือไม่ว่าต้องการลบข้อมูลนี้? การกระทำนี้ไม่สามารถย้อนกลับได้</p>
+            <div class="flex justify-end space-x-3">
+                <button id="confirm-cancel-btn" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium">ยกเลิก</button>
+                <button id="confirm-ok-btn" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium">ยืนยันการลบ</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- VIEW COMPLAINT DETAIL & PRINT MODAL -->
+    <div id="detail-modal" class="fixed inset-0 bg-gray-900 bg-opacity-70 z-50 hidden flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-3xl w-full my-8 overflow-hidden flex flex-col max-h-[90vh]">
+            <div class="bg-centralNavy text-white px-6 py-4 flex justify-between items-center no-print">
+                <div class="flex items-center space-x-2">
+                    <i class="fa-solid fa-file-lines text-centralRed"></i>
+                    <h3 class="font-bold text-lg">รายละเอียดข้อร้องเรียน (Official Report)</h3>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <button onclick="printComplaint()" class="bg-white text-centralNavy hover:bg-gray-100 px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition">
+                        <i class="fa-solid fa-print text-centralRed"></i>
+                        <span>พิมพ์ / Export PDF</span>
+                    </button>
+                    <button onclick="closeDetailModal()" class="text-gray-400 hover:text-white p-1">
+                        <i class="fa-solid fa-xmark text-xl"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Printable Content Area -->
+            <div id="print-area" class="p-8 overflow-y-auto bg-white space-y-6">
+                <!-- Official Header -->
+                <div class="border-b-2 border-centralRed pb-4 flex justify-between items-start">
+                    <div>
+                        <div class="flex items-center space-x-2">
+                            <span class="bg-centralRed text-white font-bold px-2.5 py-1 rounded text-sm tracking-wider">CDS</span>
+                            <h1 class="text-xl font-bold text-gray-900">CENTRAL DEPARTMENT STORE</h1>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-1">ระบบบริหารจัดการข้อร้องเรียนและแจ้งเบาะแส (CDS Whistleblower System)</p>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-xs text-gray-400 block">รหัสอ้างอิงเอกสาร (ID : Case)</span>
+                        <span id="detail-id" class="text-base font-bold text-centralRed font-mono">CDS0001</span>
+                    </div>
+                </div>
+
+                <!-- Metadata Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-gray-50 p-4 rounded-xl border border-gray-200 text-sm">
+                    <div>
+                        <span class="text-xs text-gray-500 block">สาขาที่ถูกร้องเรียน (Branch):</span>
+                        <span id="detail-branch" class="font-semibold text-gray-900">-</span>
+                    </div>
+                    <div>
+                        <span class="text-xs text-gray-500 block">สถานะการดำเนินการ (Status):</span>
+                        <span id="detail-status" class="inline-block mt-0.5 px-2.5 py-0.5 rounded-full text-xs font-semibold">-</span>
+                    </div>
+                    <div>
+                        <span class="text-xs text-gray-500 block">วันที่และเวลาที่ได้รับเรื่อง (Received Date & Time):</span>
+                        <span id="detail-received-time" class="font-medium text-gray-800">-</span>
+                    </div>
+                    <div>
+                        <span class="text-xs text-gray-500 block">หัวข้อ / พฤติกรรม (Topic):</span>
+                        <span id="detail-topic" class="font-semibold text-centralNavy">-</span>
+                    </div>
+                    <div class="md:col-span-2">
+                        <span class="text-xs text-gray-500 block">ผู้รับผิดชอบดำเนินการ (Person in Charge):</span>
+                        <span id="detail-assignee" class="font-semibold text-gray-900">-</span>
+                    </div>
+                </div>
+
+                <!-- Title & Description -->
+                <div class="space-y-3">
+                    <div>
+                        <h4 class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-1">ชื่อเรื่องข้อร้องเรียน (Subject)</h4>
+                        <p id="detail-title" class="text-base font-bold text-gray-900 border-l-4 border-centralRed pl-3 py-1 bg-red-50/30">-</p>
+                    </div>
+                    <div>
+                        <h4 class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-1">รายละเอียดเนื้อหาข้อร้องเรียน (Description)</h4>
+                        <div id="detail-description" class="text-sm text-gray-700 leading-relaxed bg-white p-4 rounded-xl border border-gray-200 min-h-[120px] whitespace-pre-wrap">-</div>
+                    </div>
+                    <!-- Resolution Details Section (Displayed when available) -->
+                    <div id="detail-resolution-box" class="hidden">
+                        <h4 class="text-xs font-bold uppercase tracking-wider text-emerald-700 mb-1">รายละเอียดการดำเนินการแก้ไข (Resolution Details)</h4>
+                        <div id="detail-resolution" class="text-sm text-emerald-950 leading-relaxed bg-emerald-50/60 p-4 rounded-xl border border-emerald-200 whitespace-pre-wrap">-</div>
+                    </div>
+                </div>
+
+                <!-- Audit Trail / Last Edited Log -->
+                <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200 text-xs text-slate-600 flex flex-wrap justify-between items-center gap-2">
+                    <div>
+                        <i class="fa-solid fa-clock-rotate-left text-slate-400 mr-1.5"></i>
+                        <span class="font-semibold">ประวัติการแก้ไขล่าสุด:</span>
+                        <span id="detail-last-edited">ยังไม่มีการแก้ไขข้อมูล</span>
+                    </div>
+                    <div>
+                        <span class="font-semibold">ผู้บันทึกเรื่องเข้าระบบ:</span>
+                        <span id="detail-created-by">-</span>
+                    </div>
+                </div>
+
+                <!-- Official Footer for Print -->
+                <div class="pt-8 border-t border-gray-200 grid grid-cols-2 gap-8 text-center text-xs text-gray-500">
+                    <div>
+                        <div class="border-b border-dashed border-gray-400 h-12 w-48 mx-auto mb-2"></div>
+                        <p>ลงชื่อผู้รับเรื่อง / ผู้บันทึกข้อมูล</p>
+                        <p class="mt-0.5 text-[11px]" id="detail-recorder">เจ้าหน้าที่ระบบ</p>
+                    </div>
+                    <div>
+                        <div class="border-b border-dashed border-gray-400 h-12 w-48 mx-auto mb-2"></div>
+                        <p>ลงชื่อผู้รับผิดชอบดำเนินการ / ผู้อนุมัติ</p>
+                        <p class="mt-0.5 text-[11px]">วันที่พิมพ์: <span id="detail-print-date"></span></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- EDIT COMPLAINT MODAL -->
+    <div id="edit-complaint-modal" class="fixed inset-0 bg-gray-900 bg-opacity-70 z-50 hidden flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full my-8 overflow-hidden flex flex-col max-h-[92vh]">
+            <div class="bg-centralNavy text-white px-6 py-4 flex justify-between items-center">
+                <div class="flex items-center space-x-2">
+                    <i class="fa-solid fa-pen-to-square text-amber-400"></i>
+                    <h3 class="font-bold text-lg">แก้ไขข้อมูลและอัปเดตสถานะข้อร้องเรียน (<span id="edit-case-id-badge" class="text-amber-300 font-mono"></span>)</h3>
+                </div>
+                <button onclick="closeEditComplaintModal()" class="text-gray-400 hover:text-white p-1">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+            
+            <form id="edit-complaint-form" class="p-6 overflow-y-auto space-y-4">
+                <input type="hidden" id="edit-id">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">1. วันที่ได้รับเรื่อง *</label>
+                        <input type="date" id="edit-received-date" required class="w-full h-[42px] px-3.5 py-2 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-centralRed focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">2. เวลาที่ได้รับเรื่อง *</label>
+                        <input type="time" id="edit-received-time" required class="w-full h-[42px] px-3.5 py-2 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-centralRed focus:outline-none">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">3. ชื่อเรื่องข้อร้องเรียน *</label>
+                        <input type="text" id="edit-title" required class="w-full h-[42px] px-3.5 py-2 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-centralRed focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">4. สาขาเซ็นทรัล *</label>
+                        <select id="edit-branch" required class="w-full h-[42px] px-3.5 py-2 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-centralRed focus:outline-none bg-white"></select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">5. หัวข้อ / พฤติกรรม *</label>
+                        <select id="edit-topic" required class="w-full h-[42px] px-3.5 py-2 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-centralRed focus:outline-none bg-white"></select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">6. สถานะการดำเนินการ *</label>
+                        <select id="edit-status" onchange="toggleResolutionField()" required class="w-full h-[42px] px-3.5 py-2 border border-amber-400 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-centralRed focus:outline-none bg-amber-50/40"></select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">7. ผู้รับผิดชอบดำเนินการ *</label>
+                        <select id="edit-assignee" required class="w-full h-[42px] px-3.5 py-2 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-centralRed focus:outline-none bg-white"></select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-gray-700 mb-1">8. เนื้อหา / รายละเอียดข้อร้องเรียน *</label>
+                    <textarea id="edit-description" rows="4" required class="w-full p-3.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-centralRed focus:outline-none"></textarea>
+                </div>
+
+                <!-- Conditional Resolution Details Box (Shown when Status is 'ดำเนินการเรียบร้อย') -->
+                <div id="edit-resolution-wrapper" class="hidden bg-emerald-50 border border-emerald-200 p-4 rounded-xl space-y-1.5">
+                    <label class="block text-xs font-bold text-emerald-800">
+                        <i class="fa-solid fa-circle-check mr-1"></i>รายละเอียดการดำเนินการแก้ไข (กรุณากรอกรายละเอียดก่อนบันทึกปิดเคส) *
+                    </label>
+                    <textarea id="edit-resolution" rows="3" class="w-full p-3 border border-emerald-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-600 focus:outline-none bg-white" placeholder="ระบุผลการตรวจสอบ แนวทางการแก้ไข หรือผลการดำเนินการปิดเคส..."></textarea>
+                </div>
+
+                <div class="bg-blue-50 border border-blue-100 rounded-xl p-3 text-xs text-blue-800 flex items-center space-x-2">
+                    <i class="fa-solid fa-user-pen text-blue-600"></i>
+                    <span>ระบบจะบันทึกชื่อผู้แก้ไข (<strong id="edit-editor-preview">-</strong>) พร้อมวันและเวลาปัจจุบันโดยอัตโนมัติ</span>
+                </div>
+
+                <div class="pt-2 flex justify-end space-x-3 border-t border-gray-100">
+                    <button type="button" onclick="closeEditComplaintModal()" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-sm font-medium">ยกเลิก</button>
+                    <button type="submit" class="px-6 py-2 bg-centralRed hover:bg-centralDarkRed text-white rounded-xl text-sm font-semibold shadow-md flex items-center space-x-2">
+                        <i class="fa-solid fa-floppy-disk"></i>
+                        <span>บันทึกการแก้ไข</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- EDIT USER MODAL -->
+    <div id="edit-user-modal" class="fixed inset-0 bg-gray-900 bg-opacity-70 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden">
+            <div class="bg-centralNavy text-white px-6 py-4 flex justify-between items-center">
+                <div class="flex items-center space-x-2">
+                    <i class="fa-solid fa-user-pen text-amber-400"></i>
+                    <h3 class="font-bold text-base">แก้ไขข้อมูลผู้ใช้งาน / รหัสผ่าน / สิทธิ์</h3>
+                </div>
+                <button onclick="closeEditUserModal()" class="text-gray-400 hover:text-white">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <form id="edit-user-form" class="p-6 space-y-3.5">
+                <input type="hidden" id="edit-user-id">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">ชื่อ - นามสกุล *</label>
+                    <input type="text" id="edit-user-fullname" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">ตำแหน่ง (Position) *</label>
+                    <input type="text" id="edit-user-position" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">Username *</label>
+                        <input type="text" id="edit-user-username" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">รหัสผ่านใหม่ (Password) *</label>
+                        <input type="text" id="edit-user-password" required class="w-full px-3 py-2 border border-amber-400 bg-amber-50/40 rounded-lg text-sm font-mono">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">บทบาท (Role)</label>
+                    <select id="edit-user-role" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white">
+                        <option value="User">User (ผู้ใช้งานทั่วไป)</option>
+                        <option value="Admin">Admin (ผู้ดูแลระบบ)</option>
+                    </select>
+                </div>
+                <div class="bg-gray-50 p-3 rounded-lg border border-gray-200">
+                    <span class="block text-xs font-semibold text-gray-700 mb-2">กำหนดสิทธิ์การเข้าถึงข้อมูล:</span>
+                    <div class="flex items-center space-x-5 text-xs">
+                        <label class="flex items-center space-x-1.5 cursor-pointer">
+                            <input type="checkbox" id="edit-perm-view" class="rounded text-centralRed focus:ring-centralRed">
+                            <span>ดูได้ (View)</span>
+                        </label>
+                        <label class="flex items-center space-x-1.5 cursor-pointer">
+                            <input type="checkbox" id="edit-perm-edit" class="rounded text-centralRed focus:ring-centralRed">
+                            <span>แก้ไขได้ (Edit)</span>
+                        </label>
+                        <label class="flex items-center space-x-1.5 cursor-pointer">
+                            <input type="checkbox" id="edit-perm-delete" class="rounded text-centralRed focus:ring-centralRed">
+                            <span>ลบได้ (Delete)</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="pt-2 flex justify-end space-x-2">
+                    <button type="button" onclick="closeEditUserModal()" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-xs font-semibold">ยกเลิก</button>
+                    <button type="submit" class="px-5 py-2 bg-centralRed hover:bg-centralDarkRed text-white rounded-lg text-xs font-semibold">บันทึกการแก้ไข</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- EDIT DROPDOWN ITEM MODAL -->
+    <div id="edit-dropdown-modal" class="fixed inset-0 bg-gray-900 bg-opacity-70 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden">
+            <div class="bg-centralNavy text-white px-5 py-3.5 flex justify-between items-center">
+                <h3 class="font-bold text-sm" id="edit-dropdown-title">แก้ไขรายการตัวเลือก</h3>
+                <button onclick="closeEditDropdownModal()" class="text-gray-400 hover:text-white">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <form id="edit-dropdown-form" class="p-5 space-y-4">
+                <input type="hidden" id="edit-dropdown-type">
+                <input type="hidden" id="edit-dropdown-index">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">ชื่อรายการตัวเลือก *</label>
+                    <input type="text" id="edit-dropdown-value" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-centralRed focus:outline-none">
+                </div>
+                <div class="flex justify-end space-x-2">
+                    <button type="button" onclick="closeEditDropdownModal()" class="px-3.5 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-xs font-semibold">ยกเลิก</button>
+                    <button type="submit" class="px-4 py-1.5 bg-centralRed hover:bg-centralDarkRed text-white rounded-lg text-xs font-semibold">บันทึก</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MAIN APPLICATION LAYOUT -->
+    <div id="app-container" class="flex h-screen overflow-hidden hidden">
+        
+        <!-- SIDEBAR NAVIGATION -->
+        <aside class="w-64 bg-centralNavy text-white flex flex-col justify-between flex-shrink-0 transition-all duration-300 z-20">
+            <div>
+                <!-- Brand Logo -->
+                <div class="p-6 border-b border-slate-800 flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-xl bg-centralRed flex items-center justify-center text-white font-bold text-xl shadow-lg">
+                        <i class="fa-solid fa-shield-halved"></i>
+                    </div>
+                    <div>
+                        <span class="font-bold text-base tracking-wide block leading-tight">CDS Whistleblower</span>
+                        <span class="text-[11px] text-slate-400 block">Central Complaint System</span>
+                    </div>
+                </div>
+
+                <!-- Navigation Menu (Reordered per Requirement 1) -->
+                <nav class="p-4 space-y-1.5">
+                    <button onclick="switchTab('form')" id="nav-form" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium bg-centralRed text-white transition">
+                        <i class="fa-solid fa-square-plus w-5 text-center"></i>
+                        <span>หน้าบันทึกเรื่องร้องเรียน</span>
+                    </button>
+                    <button onclick="switchTab('complaints')" id="nav-complaints" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition">
+                        <i class="fa-solid fa-list-check w-5 text-center"></i>
+                        <span>รายการข้อร้องเรียน</span>
+                    </button>
+                    <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition">
+                        <i class="fa-solid fa-chart-pie w-5 text-center"></i>
+                        <span>หน้าแดชบอร์ด</span>
+                    </button>
+                    <button onclick="switchTab('settings')" id="nav-settings" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition">
+                        <i class="fa-solid fa-gear w-5 text-center"></i>
+                        <span>ตั้งค่าระบบ & ผู้ใช้</span>
+                    </button>
+                </nav>
+            </div>
+
+            <!-- Current User Info & Logout -->
+            <div class="p-4 border-t border-slate-800 bg-slate-900/50">
+                <div class="flex items-center space-x-3 mb-3">
+                    <div class="w-9 h-9 rounded-full bg-centralRed/20 border border-centralRed text-centralRed flex items-center justify-center font-bold text-sm" id="user-avatar">A</div>
+                    <div class="overflow-hidden">
+                        <p class="text-sm font-semibold text-white truncate" id="current-user-name">Admin</p>
+                        <p class="text-[11px] text-centralRed font-medium uppercase tracking-wider truncate" id="current-user-role">ADMIN</p>
+                    </div>
+                </div>
+                <button onclick="logout()" class="w-full py-2 px-3 bg-slate-800 hover:bg-red-600 text-slate-300 hover:text-white rounded-lg text-xs font-medium flex items-center justify-center space-x-2 transition">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                    <span>ออกจากระบบ</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT AREA -->
+        <div class="flex-1 flex flex-col min-w-0 overflow-y-auto">
+            
+            <!-- TOP NAVBAR -->
+            <header class="h-16 shrink-0 bg-white border-b border-gray-200 flex items-center justify-between px-8 shadow-sm">
+                <div class="flex items-center space-x-4">
+                    <h1 id="page-title" class="text-xl font-bold text-gray-800">บันทึกข้อมูลข้อร้องเรียนใหม่</h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="text-xs text-gray-500 font-medium hidden sm:block" id="current-date-display"></div>
+                </div>
+            </header>
+
+            <!-- VIEW 1: DASHBOARD -->
+            <main id="view-dashboard" class="hidden p-8 space-y-6 max-w-7xl mx-auto w-full">
+                <!-- Filter & Export Bar -->
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-wrap items-end justify-between gap-4">
+                    <div class="flex flex-wrap items-center gap-4 flex-1">
+                        <div class="min-w-[220px]">
+                            <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">กรองตามสาขาเซ็นทรัล (32 สาขา)</label>
+                            <select id="dash-filter-branch" onchange="updateDashboard()" class="w-full border border-gray-300 rounded-xl px-3.5 py-2 text-sm focus:ring-2 focus:ring-centralRed focus:outline-none bg-gray-50">
+                                <option value="ALL">ทุกสาขา (All 32 Branches)</option>
+                            </select>
+                        </div>
+                        <div class="min-w-[200px]">
+                            <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">กรองตามพฤติกรรม / หัวข้อ</label>
+                            <select id="dash-filter-topic" onchange="updateDashboard()" class="w-full border border-gray-300 rounded-xl px-3.5 py-2 text-sm focus:ring-2 focus:ring-centralRed focus:outline-none bg-gray-50">
+                                <option value="ALL">ทุกหัวข้อ (All Topics)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <button onclick="exportDashboardExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-xl text-sm font-medium flex items-center space-x-2 shadow-sm transition">
+                            <i class="fa-solid fa-file-excel"></i>
+                            <span>Export Excel แดชบอร์ด</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- KPI Summary Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-semibold text-gray-400 uppercase">เรื่องร้องเรียนทั้งหมด (Total Cases)</p>
+                            <h3 class="text-3xl font-bold text-gray-900 mt-1" id="kpi-total">0</h3>
+                            <p class="text-xs text-gray-500 mt-1">ข้อมูลตามตัวกรองปัจจุบัน</p>
+                        </div>
+                        <div class="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center text-2xl">
+                            <i class="fa-solid fa-folder-open"></i>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between border-l-4 border-amber-500">
+                        <div>
+                            <p class="text-xs font-semibold text-amber-600 uppercase">เคสคงค้าง / รอดำเนินการ (Pending)</p>
+                            <h3 class="text-3xl font-bold text-amber-600 mt-1" id="kpi-pending">0</h3>
+                            <p class="text-xs text-gray-500 mt-1">ยังไม่ปิดเคส (รอดำเนินการ/ตรวจสอบ)</p>
+                        </div>
+                        <div class="w-14 h-14 rounded-2xl bg-amber-50 text-amber-500 flex items-center justify-center text-2xl">
+                            <i class="fa-solid fa-clock-rotate-left"></i>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between border-l-4 border-emerald-500">
+                        <div>
+                            <p class="text-xs font-semibold text-emerald-600 uppercase">เคสที่ปิดแล้ว (Resolved)</p>
+                            <h3 class="text-3xl font-bold text-emerald-600 mt-1" id="kpi-closed">0</h3>
+                            <p class="text-xs text-gray-500 mt-1">ดำเนินการเรียบร้อยแล้ว</p>
+                        </div>
+                        <div class="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-500 flex items-center justify-center text-2xl">
+                            <i class="fa-solid fa-circle-check"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts Grid -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Chart 1: Status Doughnut -->
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="font-bold text-gray-800 text-base">สัดส่วนเคสคงค้าง vs เคสที่ปิดแล้ว</h3>
+                            <span class="text-xs text-gray-400 bg-gray-100 px-2.5 py-1 rounded-md">Doughnut Chart</span>
+                        </div>
+                        <div class="h-72 flex items-center justify-center">
+                            <canvas id="statusChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Chart 2: Behavior / Topic Bar Chart -->
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="font-bold text-gray-800 text-base">จำนวนเรื่องร้องเรียนแยกตามพฤติกรรม / หัวข้อ</h3>
+                            <span class="text-xs text-gray-400 bg-gray-100 px-2.5 py-1 rounded-md">Bar Chart</span>
+                        </div>
+                        <div class="h-72">
+                            <canvas id="topicChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Branch Breakdown Table on Dashboard -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                    <h3 class="font-bold text-gray-800 text-base mb-4">สรุปจำนวนเคสแยกตามสาขา (Branch Summary)</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="border-b border-gray-200 text-xs font-semibold text-gray-500 uppercase bg-gray-50">
+                                    <th class="py-3 px-4 rounded-tl-lg">สาขาเซ็นทรัล (Central Branch)</th>
+                                    <th class="py-3 px-4 text-center">เคสทั้งหมด</th>
+                                    <th class="py-3 px-4 text-center text-amber-600">เคสคงค้าง (Pending)</th>
+                                    <th class="py-3 px-4 text-center text-emerald-600 rounded-tr-lg">เคสที่ปิดแล้ว (Closed)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dash-branch-table" class="divide-y divide-gray-100 text-sm"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </main>
+
+            <!-- VIEW 2: NEW COMPLAINT FORM (Default Initial View) -->
+            <main id="view-form" class="p-8 max-w-4xl mx-auto w-full">
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+                    <div class="border-b border-gray-100 pb-5 mb-6 flex flex-wrap justify-between items-center gap-4">
+                        <div>
+                            <h2 class="text-lg font-bold text-gray-900 flex items-center space-x-2">
+                                <i class="fa-solid fa-file-pen text-centralRed"></i>
+                                <span>บันทึกข้อมูลข้อร้องเรียนใหม่ (Whistleblower & Complaint Entry)</span>
+                            </h2>
+                            <p class="text-xs text-gray-500 mt-1">กรอกรายละเอียดข้อมูลการร้องเรียนจากช่องทางต่างๆ สำหรับสาขาเซ็นทรัล</p>
+                        </div>
+                        <div class="bg-red-50 border border-red-200 px-4 py-2 rounded-xl text-right">
+                            <span class="block text-[11px] font-semibold text-red-500 uppercase">ID : Case ถัดไป</span>
+                            <span id="form-next-case-id" class="text-base font-bold font-mono text-centralRed">CDS0001</span>
+                        </div>
+                    </div>
+
+                    <form id="complaint-form" class="space-y-5">
+                        <!-- Row 1: Case ID + Received Date + Received Time -->
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-5 items-end">
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-700 mb-1.5">ID : CASE (รันอัตโนมัติ)</label>
+                                <input type="text" id="form-case-id-display" readonly class="w-full h-[42px] px-4 py-2 border border-red-200 bg-red-50/60 text-centralRed font-bold font-mono rounded-xl text-sm cursor-not-allowed" value="CDS0001">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-700 mb-1.5">1. วันที่ได้รับเรื่อง (RECEIVED DATE) *</label>
+                                <input type="date" id="form-received-date" required class="w-full h-[42px] px-4 py-2 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-centralRed focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-700 mb-1.5">2. เวลาที่ได้รับเรื่อง (RECEIVED TIME) *</label>
+                                <input type="time" id="form-received-time" required class="w-full h-[42px] px-4 py-2 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-centralRed focus:outline-none">
+                            </div>
+                        </div>
+
+                        <!-- Row 2: Subject & Branch -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5 items-end">
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-700 mb-1.5">3. ชื่อเรื่องข้อร้องเรียน (SUBJECT / TITLE) *</label>
+                                <input type="text" id="form-title" required placeholder="ระบุหัวข้อเรื่องสั้นๆ เช่น พนักงานบริการไม่สุภาพ" class="w-full h-[42px] px-4 py-2 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-centralRed focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-700 mb-1.5">4. สาขาเซ็นทรัล (CENTRAL BRANCH) *</label>
+                                <select id="form-branch" required class="w-full h-[42px] px-4 py-2 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-centralRed focus:outline-none bg-white">
+                                    <option value="">-- เลือกสาขาเซ็นทรัล --</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Row 3: Topic, Status, Assignee -->
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-5 items-end">
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-700 mb-1.5">5. หัวข้อ / พฤติกรรมข้อร้องเรียน *</label>
+                                <select id="form-topic" required class="w-full h-[42px] px-4 py-2 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-centralRed focus:outline-none bg-white">
+                                    <option value="">-- เลือกหัวข้อ --</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-700 mb-1.5">6. สถานะการดำเนินการ (STATUS) *</label>
+                                <select id="form-status" required class="w-full h-[42px] px-4 py-2 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-centralRed focus:outline-none bg-white">
+                                    <option value="">-- เลือกสถานะ --</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-700 mb-1.5">7. ผู้รับผิดชอบดำเนินการ (ASSIGNEE) *</label>
+                                <select id="form-assignee" required class="w-full h-[42px] px-4 py-2 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-centralRed focus:outline-none bg-white">
+                                    <option value="">-- เลือกผู้รับผิดชอบ --</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Row 4: Description -->
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1.5">8. เนื้อหา / รายละเอียดข้อร้องเรียน (CONTENT DETAILS) *</label>
+                            <textarea id="form-description" rows="5" required placeholder="ระบุรายละเอียดเหตุการณ์ ข้อมูลผู้ร้องเรียน พฤติกรรม หรือข้อเสนอแนะ..." class="w-full p-4 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-centralRed focus:outline-none"></textarea>
+                        </div>
+
+                        <!-- Submit Actions -->
+                        <div class="pt-4 border-t border-gray-100 flex justify-end space-x-3">
+                            <button type="reset" onclick="setDefaultDateTime()" class="px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-sm font-medium transition">ล้างข้อมูลฟอร์ม</button>
+                            <button type="submit" class="px-6 py-2.5 bg-centralRed hover:bg-centralDarkRed text-white rounded-xl text-sm font-semibold shadow-md flex items-center space-x-2 transition">
+                                <i class="fa-solid fa-floppy-disk"></i>
+                                <span>บันทึกข้อมูลข้อร้องเรียน</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </main>
+
+            <!-- VIEW 3: COMPLAINTS LIST -->
+            <main id="view-complaints" class="hidden p-8 max-w-7xl mx-auto w-full space-y-6">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                    <div class="flex flex-wrap justify-between items-center gap-4 mb-6">
+                        <div>
+                            <h2 class="text-lg font-bold text-gray-900 flex items-center space-x-2">
+                                <i class="fa-solid fa-list-ul text-centralRed"></i>
+                                <span>รายการข้อร้องเรียนทั้งหมด (All Complaints)</span>
+                            </h2>
+                            <p class="text-xs text-gray-500 mt-1">ตรวจสอบ แก้ไขสถานะ พิมพ์รายงาน หรือ Export ข้อมูลเป็นไฟล์ Excel</p>
+                        </div>
+
+                        <!-- Search & Filter Controls + Excel Export -->
+                        <div class="flex flex-wrap items-center gap-3">
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400"><i class="fa-solid fa-magnifying-glass text-xs"></i></span>
+                                <input type="text" id="list-search" onkeyup="renderComplaintsTable()" placeholder="ค้นหา ID, เรื่อง, สาขา..." class="pl-9 pr-4 py-2 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-centralRed focus:outline-none w-52">
+                            </div>
+                            <select id="list-filter-status" onchange="renderComplaintsTable()" class="border border-gray-300 rounded-xl px-3.5 py-2 text-sm focus:ring-2 focus:ring-centralRed focus:outline-none bg-white">
+                                <option value="ALL">ทุกสถานะ</option>
+                            </select>
+                            <button onclick="exportTableToExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-sm font-medium flex items-center space-x-2 shadow-sm transition">
+                                <i class="fa-solid fa-file-excel"></i>
+                                <span>Export Excel</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Complaints Data Table -->
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-gray-50 border-y border-gray-200 text-xs font-semibold text-gray-500 uppercase">
+                                    <th class="py-3.5 px-4">ID : Case</th>
+                                    <th class="py-3.5 px-4">วันที่ได้รับเรื่อง</th>
+                                    <th class="py-3.5 px-4">หัวข้อ / ชื่อเรื่อง</th>
+                                    <th class="py-3.5 px-4">สาขาเซ็นทรัล</th>
+                                    <th class="py-3.5 px-4">หมวดหมู่</th>
+                                    <th class="py-3.5 px-4">ผู้รับผิดชอบ</th>
+                                    <th class="py-3.5 px-4 text-center">สถานะ</th>
+                                    <th class="py-3.5 px-4 text-center">จัดการ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="complaints-table-body" class="divide-y divide-gray-100 text-sm"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </main>
+
+            <!-- VIEW 4: SYSTEM SETTINGS & USER MANAGEMENT -->
+            <main id="view-settings" class="hidden p-8 max-w-7xl mx-auto w-full space-y-8">
+                
+                <!-- Section 1: Dropdown Configurations -->
+                <div>
+                    <h2 class="text-lg font-bold text-gray-900 mb-4 flex items-center space-x-2">
+                        <i class="fa-solid fa-sliders text-centralRed"></i>
+                        <span>ตั้งค่าตัวเลือกดรอปดาวน์ (Dropdown Configurations)</span>
+                    </h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        
+                        <!-- Card A: Topics -->
+                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col">
+                            <h3 class="font-bold text-gray-800 text-sm mb-3 flex items-center space-x-2">
+                                <i class="fa-solid fa-tags text-centralRed"></i>
+                                <span>หัวข้อข้อร้องเรียน (Topics)</span>
+                            </h3>
+                            <div class="flex space-x-2 mb-4">
+                                <input type="text" id="new-topic-input" placeholder="เพิ่มหัวข้อใหม่..." class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-xs focus:ring-2 focus:ring-centralRed focus:outline-none">
+                                <button onclick="addDropdownItem('topics', 'new-topic-input')" class="bg-centralRed hover:bg-centralDarkRed text-white px-3 py-2 rounded-lg text-xs font-semibold whitespace-nowrap">+ เพิ่ม</button>
+                            </div>
+                            <div class="border border-gray-200 rounded-xl overflow-hidden flex-1">
+                                <table class="w-full text-left border-collapse">
+                                    <thead>
+                                        <tr class="bg-gray-50 border-b border-gray-200 text-[11px] font-semibold text-gray-500 uppercase">
+                                            <th class="py-2 px-3">รายการหัวข้อ</th>
+                                            <th class="py-2 px-3 text-right w-20">จัดการ</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="settings-topics-list" class="divide-y divide-gray-100 text-xs"></tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Card B: Statuses -->
+                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col">
+                            <h3 class="font-bold text-gray-800 text-sm mb-3 flex items-center space-x-2">
+                                <i class="fa-solid fa-spinner text-amber-500"></i>
+                                <span>สถานะการดำเนินการ (Statuses)</span>
+                            </h3>
+                            <div class="flex space-x-2 mb-4">
+                                <input type="text" id="new-status-input" placeholder="เพิ่มสถานะใหม่..." class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-xs focus:ring-2 focus:ring-centralRed focus:outline-none">
+                                <button onclick="addDropdownItem('statuses', 'new-status-input')" class="bg-centralRed hover:bg-centralDarkRed text-white px-3 py-2 rounded-lg text-xs font-semibold whitespace-nowrap">+ เพิ่ม</button>
+                            </div>
+                            <div class="border border-gray-200 rounded-xl overflow-hidden flex-1">
+                                <table class="w-full text-left border-collapse">
+                                    <thead>
+                                        <tr class="bg-gray-50 border-b border-gray-200 text-[11px] font-semibold text-gray-500 uppercase">
+                                            <th class="py-2 px-3">รายการสถานะ</th>
+                                            <th class="py-2 px-3 text-right w-20">จัดการ</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="settings-statuses-list" class="divide-y divide-gray-100 text-xs"></tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Card C: Assignees -->
+                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col">
+                            <h3 class="font-bold text-gray-800 text-sm mb-3 flex items-center space-x-2">
+                                <i class="fa-solid fa-user-tie text-blue-600"></i>
+                                <span>ผู้รับผิดชอบดำเนินการ (Assignees)</span>
+                            </h3>
+                            <div class="flex space-x-2 mb-4">
+                                <input type="text" id="new-assignee-input" placeholder="เพิ่มชื่อผู้รับผิดชอบ..." class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-xs focus:ring-2 focus:ring-centralRed focus:outline-none">
+                                <button onclick="addDropdownItem('assignees', 'new-assignee-input')" class="bg-centralRed hover:bg-centralDarkRed text-white px-3 py-2 rounded-lg text-xs font-semibold whitespace-nowrap">+ เพิ่ม</button>
+                            </div>
+                            <div class="border border-gray-200 rounded-xl overflow-hidden flex-1">
+                                <table class="w-full text-left border-collapse">
+                                    <thead>
+                                        <tr class="bg-gray-50 border-b border-gray-200 text-[11px] font-semibold text-gray-500 uppercase">
+                                            <th class="py-2 px-3">รายชื่อผู้รับผิดชอบ</th>
+                                            <th class="py-2 px-3 text-right w-20">จัดการ</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="settings-assignees-list" class="divide-y divide-gray-100 text-xs"></tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Card D: Branches -->
+                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col">
+                            <h3 class="font-bold text-gray-800 text-sm mb-3 flex items-center space-x-2">
+                                <i class="fa-solid fa-store text-emerald-600"></i>
+                                <span>สาขาเซ็นทรัล (Branches)</span>
+                            </h3>
+                            <div class="flex space-x-2 mb-4">
+                                <input type="text" id="new-branch-input" placeholder="เพิ่มสาขาใหม่..." class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-xs focus:ring-2 focus:ring-centralRed focus:outline-none">
+                                <button onclick="addDropdownItem('branches', 'new-branch-input')" class="bg-centralRed hover:bg-centralDarkRed text-white px-3 py-2 rounded-lg text-xs font-semibold whitespace-nowrap">+ เพิ่ม</button>
+                            </div>
+                            <div class="border border-gray-200 rounded-xl overflow-hidden flex-1 max-h-[320px] overflow-y-auto">
+                                <table class="w-full text-left border-collapse">
+                                    <thead>
+                                        <tr class="bg-gray-50 border-b border-gray-200 text-[11px] font-semibold text-gray-500 uppercase sticky top-0">
+                                            <th class="py-2 px-3">รายชื่อสาขา</th>
+                                            <th class="py-2 px-3 text-right w-20">จัดการ</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="settings-branches-list" class="divide-y divide-gray-100 text-xs"></tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- Section 2: User & Role Management -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                    <div class="border-b border-gray-100 pb-4 mb-6">
+                        <h2 class="text-lg font-bold text-gray-900 flex items-center space-x-2">
+                            <i class="fa-solid fa-users-gear text-centralRed"></i>
+                            <span>จัดการผู้ใช้งานและกำหนดสิทธิ์ (User & Permission Management)</span>
+                        </h2>
+                        <p class="text-xs text-gray-500 mt-1">เพิ่มบัญชีผู้ใช้งาน บันทึกชื่อ-นามสกุล ตำแหน่ง เปลี่ยนรหัสผ่าน และกำหนดสิทธิ์ View / Edit / Delete</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        <!-- Add New User Form -->
+                        <form id="add-user-form" class="bg-gray-50 p-5 rounded-xl border border-gray-200 space-y-3.5 h-fit">
+                            <h4 class="font-bold text-sm text-gray-800 border-b border-gray-200 pb-2">เพิ่มผู้ใช้งานใหม่ (Add User)</h4>
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-600 mb-1">ชื่อ - นามสกุล (Full Name) *</label>
+                                <input type="text" id="new-user-fullname" required placeholder="เช่น นายสมชาย ใจดี" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-600 mb-1">ตำแหน่ง (Position) *</label>
+                                <input type="text" id="new-user-position" required placeholder="เช่น เจ้าหน้าที่รับเรื่องร้องเรียน" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white">
+                            </div>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-xs font-semibold text-gray-600 mb-1">Username *</label>
+                                    <input type="text" id="new-user-username" required placeholder="เช่น somchai" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-gray-600 mb-1">Password *</label>
+                                    <input type="password" id="new-user-password" required placeholder="••••••••" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-600 mb-1">บทบาท (Role)</label>
+                                <select id="new-user-role" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white">
+                                    <option value="User">User (ผู้ใช้งานทั่วไป)</option>
+                                    <option value="Admin">Admin (ผู้ดูแลระบบ)</option>
+                                </select>
+                            </div>
+                            <div class="pt-1">
+                                <span class="block text-xs font-semibold text-gray-600 mb-2">สิทธิ์การใช้งาน (Permissions):</span>
+                                <div class="flex items-center space-x-4 text-xs">
+                                    <label class="flex items-center space-x-1.5 cursor-pointer">
+                                        <input type="checkbox" id="perm-view" checked class="rounded text-centralRed focus:ring-centralRed">
+                                        <span>ดูได้ (View)</span>
+                                    </label>
+                                    <label class="flex items-center space-x-1.5 cursor-pointer">
+                                        <input type="checkbox" id="perm-edit" class="rounded text-centralRed focus:ring-centralRed">
+                                        <span>แก้ไขได้ (Edit)</span>
+                                    </label>
+                                    <label class="flex items-center space-x-1.5 cursor-pointer">
+                                        <input type="checkbox" id="perm-delete" class="rounded text-centralRed focus:ring-centralRed">
+                                        <span>ลบได้ (Delete)</span>
+                                    </label>
+                                </div>
+                            </div>
+                            <button type="submit" class="w-full bg-centralNavy hover:bg-slate-800 text-white py-2.5 rounded-lg text-xs font-semibold transition shadow-sm mt-2">
+                                + เพิ่มผู้ใช้งานเข้าระบบ
+                            </button>
+                        </form>
+
+                        <!-- Users Table -->
+                        <div class="lg:col-span-2 overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="bg-gray-50 border-y border-gray-200 text-xs font-semibold text-gray-500 uppercase">
+                                        <th class="py-3 px-4">ชื่อ-นามสกุล / ตำแหน่ง</th>
+                                        <th class="py-3 px-4">Username / รหัสผ่าน</th>
+                                        <th class="py-3 px-4">Role</th>
+                                        <th class="py-3 px-4">สิทธิ์ (View / Edit / Del)</th>
+                                        <th class="py-3 px-4 text-center">จัดการ</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="users-table-body" class="divide-y divide-gray-100 text-sm"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+            </main>
+
+            <!-- FOOTER -->
+            <footer class="mt-auto py-4 px-8 border-t border-gray-200 bg-white text-center text-xs text-gray-400">
+                © 2026 Poositdeeood - Central Department Store Whistleblower & Complaint Management System
+            </footer>
+        </div>
+    </div>
+
+    <!-- HIDDEN PRINT FRAME FOR RELIABLE PRINTING IN ALL BROWSERS & IFRAMES -->
+    <iframe id="print-iframe" style="position:fixed;right:0;bottom:0;width:0;height:0;border:0;"></iframe>
+
+    <!-- FIREBASE & APPLICATION LOGIC -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getDatabase, ref, set, get, onValue } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
+
+        // -------------------------------------------------------------------------
+        // 1. STATE & DEFAULT DATA (32 CENTRAL BRANCHES)
+        // -------------------------------------------------------------------------
+        const defaultBranches = [
+            "1. Central Chidlom (เซ็นทรัล ชิดลม)",
+            "2. Central Ladprao (เซ็นทรัล ลาดพร้าว)",
+            "3. CentralWorld (เซ็นทรัลเวิลด์)",
+            "4. Central Pinklao (เซ็นทรัล ปิ่นเกล้า)",
+            "5. Central Bangna (เซ็นทรัล บางนา)",
+            "6. Central Rama 3 (เซ็นทรัล พระราม 3)",
+            "7. Central Rama 2 (เซ็นทรัล พระราม 2)",
+            "8. Central Chaengwattana (เซ็นทรัล แจ้งวัฒนะ)",
+            "9. Central Pattaya (เซ็นทรัล พัทยา)",
+            "10. Central Phuket (เซ็นทรัล ภูเก็ต)",
+            "11. Central Chiangmai (เซ็นทรัล เชียงใหม่)",
+            "12. Central Chiangmai Airport (เซ็นทรัล เชียงใหม่ แอร์พอร์ต)",
+            "13. Central Khonkaen (เซ็นทรัล ขอนแก่น)",
+            "14. Central Udonthani (เซ็นทรัล อุดรธานี)",
+            "15. Central Hatyai (เซ็นทรัล หาดใหญ่)",
+            "16. Central Korat (เซ็นทรัล โคราช)",
+            "17. Central Westgate (เซ็นทรัล เวสต์เกต)",
+            "18. Central EastVille (เซ็นทรัล อีสต์วิลล์)",
+            "19. Central Rama 9 (เซ็นทรัล พระราม 9)",
+            "20. Central Rangsit (เซ็นทรัล รังสิต)",
+            "21. Central Ramindra (เซ็นทรัล รามอินทรา)",
+            "22. Central Silom Complex (เซ็นทรัล สีลมคอมเพล็กซ์)",
+            "23. Central Megabangna (เซ็นทรัล เมกาบางนา)",
+            "24. Central Salaya (เซ็นทรัล ศาลายา)",
+            "25. Central Rayong (เซ็นทรัล ระยอง)",
+            "26. Central Chonburi (เซ็นทรัล ชลบุรี)",
+            "27. Central Samui (เซ็นทรัล สมุย)",
+            "28. Central Suratthani (เซ็นทรัล สุราษฎร์ธานี)",
+            "29. Central Ubon (เซ็นทรัล อุบลราชธานี)",
+            "30. Central Phitsanulok (เซ็นทรัล พิษณุโลก)",
+            "31. Central Chiangrai (เซ็นทรัล เชียงราย)",
+            "32. Central Nakhon Si Thammarat (เซ็นทรัล นครศรีธรรมราช)"
+        ];
+
+        // Manual Firebase Config for Standalone Hosting (e.g., GitHub Pages)
+        // วางค่า firebaseConfig จากโปรเจกต์ Firebase ของคุณตรงนี้เพื่อเชื่อมต่อฐานข้อมูลจริงบน GitHub Pages
+        const manualFirebaseConfig = {
+            apiKey: "AIzaSyAl3tYS61GV-MtAlIw1oeQg0SGlnJ4-niQ",
+            authDomain: "cds-whistleblower.firebaseapp.com",
+            projectId: "cds-whistleblower",
+            storageBucket: "cds-whistleblower.firebasestorage.app",
+            messagingSenderId: "554100874049",
+            appId: "1:554100874049:web:4e79cb6960ee9096a45fc0",
+            databaseURL: "https://cds-whistleblower-default-rtdb.asia-southeast1.firebasedatabase.app"
+        };
+
+        // Initial Clean Production Settings & Data (No Mockup Records or Hardcoded Test Users)
+        let appState = {
+            currentUser: null,
+            nextCaseNum: 1,
+            users: [],
+            topics: ['บริการ (Service)', 'พฤติกรรมพนักงาน (Behavior)', 'สินค้าและคุณภาพ (Product)', 'ราคาและโปรโมชั่น (Price/Promotion)', 'อื่นๆ (Others)'],
+            statuses: ['รอดำเนินการ', 'อยู่ระหว่างตรวจสอบ', 'ดำเนินการเรียบร้อย'],
+            assignees: ['ทีมบริการลูกค้า (CS Team)', 'ผู้จัดการสาขา (Branch Manager)', 'ฝ่ายทรัพยากรบุคคล (HR)', 'ฝ่ายตรวจสอบภายใน (Internal Audit)'],
+            branches: defaultBranches,
+            complaints: []
+        };
+
+        // Firebase variables
+        let db = null;
+        let auth = null;
+        let isFirebaseConnected = false;
+        // Sanitize appId to remove invalid Realtime Database path characters (., #, $, [, ])
+        const rawAppId = typeof __app_id !== 'undefined' ? __app_id : 'central-whistleblower-prod';
+        const appId = rawAppId.replace(/[.#$\[\]]/g, '_');
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : manualFirebaseConfig;
+
+        // -------------------------------------------------------------------------
+        // 2. INITIALIZATION & STORAGE SYNC
+        // -------------------------------------------------------------------------
+        window.onload = async function() {
+            // Display Current Date
+            const now = new Date();
+            const dateDisplay = document.getElementById('current-date-display');
+            if (dateDisplay) {
+                dateDisplay.innerText = now.toLocaleDateString('th-TH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+            }
+
+            // Set Default Date & Time in Complaint Form
+            setDefaultDateTime();
+
+            // Load from LocalStorage first as immediate fallback
+            const savedLocal = localStorage.getItem('cds_whistleblower_state_v2');
+            if (savedLocal) {
+                try {
+                    const parsed = JSON.parse(savedLocal);
+                    appState = { ...appState, ...parsed, currentUser: null };
+                } catch (e) { console.error("Local parse error", e); }
+            }
+
+            // Initialize Firebase Realtime Database if config is available
+            if (firebaseConfig) {
+                try {
+                    const activeConfig = {
+                        ...firebaseConfig,
+                        databaseURL: firebaseConfig.databaseURL || "https://cds-whistleblower-default-rtdb.asia-southeast1.firebasedatabase.app"
+                    };
+                    const app = initializeApp(activeConfig);
+                    db = getDatabase(app);
+                    if (activeConfig.apiKey) {
+                        auth = getAuth(app);
+                        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                            await signInWithCustomToken(auth, __initial_auth_token);
+                        } else {
+                            await signInAnonymously(auth);
+                        }
+                    }
+                    isFirebaseConnected = true;
+                    await loadDataFromFirebase();
+                } catch (err) {
+                    console.error("Firebase Realtime DB init error:", err);
+                }
+            }
+
+            refreshAllViews();
+        };
+
+        // Helper: Format sequential Case ID (CDS0001, CDS0002, ...)
+        function formatCaseId(num) {
+            return 'CDS' + String(num).padStart(4, '0');
+        }
+
+        function updateNextCaseIdDisplay() {
+            const nextId = formatCaseId(appState.nextCaseNum || 1);
+            const badge = document.getElementById('form-next-case-id');
+            const input = document.getElementById('form-case-id-display');
+            if (badge) badge.innerText = nextId;
+            if (input) input.value = nextId;
+        }
+
+        // Save State to both LocalStorage and Firebase Realtime Database
+        async function saveAppState() {
+            const stateToSave = {
+                nextCaseNum: appState.nextCaseNum,
+                users: appState.users,
+                topics: appState.topics,
+                statuses: appState.statuses,
+                assignees: appState.assignees,
+                branches: appState.branches,
+                complaints: appState.complaints
+            };
+            localStorage.setItem('cds_whistleblower_state_v2', JSON.stringify(stateToSave));
+
+            if (isFirebaseConnected && db) {
+                try {
+                    const dbRef = ref(db, `cds_whistleblower/${appId}/main_state`);
+                    await set(dbRef, stateToSave);
+                } catch (err) {
+                    console.error("Firebase Realtime DB save error:", err);
+                }
+            }
+        }
+
+        // Load Data from Firebase Realtime Database (Real-time listener)
+        async function loadDataFromFirebase() {
+            if (!isFirebaseConnected || !db) return;
+            try {
+                const dbRef = ref(db, `cds_whistleblower/${appId}/main_state`);
+                const snap = await get(dbRef);
+                if (snap.exists()) {
+                    const data = snap.val();
+                    appState.nextCaseNum = data.nextCaseNum || appState.nextCaseNum;
+                    appState.users = Array.isArray(data.users) ? data.users : (data.users ? Object.values(data.users) : appState.users);
+                    appState.topics = Array.isArray(data.topics) ? data.topics : (data.topics ? Object.values(data.topics) : appState.topics);
+                    appState.statuses = Array.isArray(data.statuses) ? data.statuses : (data.statuses ? Object.values(data.statuses) : appState.statuses);
+                    appState.assignees = Array.isArray(data.assignees) ? data.assignees : (data.assignees ? Object.values(data.assignees) : appState.assignees);
+                    appState.branches = Array.isArray(data.branches) ? data.branches : (data.branches ? Object.values(data.branches) : appState.branches);
+                    appState.complaints = Array.isArray(data.complaints) ? data.complaints : (data.complaints ? Object.values(data.complaints) : appState.complaints);
+                }
+
+                // Listen for real-time updates
+                onValue(dbRef, (snapshot) => {
+                    if (snapshot.exists()) {
+                        const liveData = snapshot.val();
+                        appState.nextCaseNum = liveData.nextCaseNum || appState.nextCaseNum;
+                        appState.users = Array.isArray(liveData.users) ? liveData.users : (liveData.users ? Object.values(liveData.users) : []);
+                        appState.topics = Array.isArray(liveData.topics) ? liveData.topics : (liveData.topics ? Object.values(liveData.topics) : appState.topics);
+                        appState.statuses = Array.isArray(liveData.statuses) ? liveData.statuses : (liveData.statuses ? Object.values(liveData.statuses) : appState.statuses);
+                        appState.assignees = Array.isArray(liveData.assignees) ? liveData.assignees : (liveData.assignees ? Object.values(liveData.assignees) : appState.assignees);
+                        appState.branches = Array.isArray(liveData.branches) ? liveData.branches : (liveData.branches ? Object.values(liveData.branches) : appState.branches);
+                        appState.complaints = Array.isArray(liveData.complaints) ? liveData.complaints : (liveData.complaints ? Object.values(liveData.complaints) : []);
+                        refreshAllViews();
+                    }
+                });
+            } catch (err) {
+                console.error("Firebase Realtime DB load error:", err);
+            }
+        }
+
+        // -------------------------------------------------------------------------
+        // 3. AUTHENTICATION & ROLE-BASED ACCESS CONTROL
+        // -------------------------------------------------------------------------
+        window.toggleLoginPassword = function() {
+            const pwdInput = document.getElementById('login-password');
+            const eyeIcon = document.getElementById('login-eye-icon');
+            if (pwdInput.type === 'password') {
+                pwdInput.type = 'text';
+                eyeIcon.className = 'fa-solid fa-eye-slash text-sm';
+            } else {
+                pwdInput.type = 'password';
+                eyeIcon.className = 'fa-solid fa-eye text-sm';
+            }
+        };
+
+        document.getElementById('login-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const u = document.getElementById('login-username').value.trim();
+            const p = document.getElementById('login-password').value.trim();
+            const errBox = document.getElementById('login-error');
+
+            const foundUser = appState.users.find(user => user.username === u && user.password === p);
+            if (foundUser) {
+                if (!foundUser.permissions.view) {
+                    errBox.innerText = "บัญชีนี้ถูกระงับสิทธิ์การเข้าดูข้อมูล กรุณาติดต่อผู้ดูแลระบบ";
+                    errBox.classList.remove('hidden');
+                    return;
+                }
+                appState.currentUser = foundUser;
+                errBox.classList.add('hidden');
+                document.getElementById('login-modal').classList.add('hidden');
+                document.getElementById('app-container').classList.remove('hidden');
+                
+                // Update Sidebar Profile
+                document.getElementById('current-user-name').innerText = foundUser.fullName || foundUser.username;
+                document.getElementById('current-user-role').innerText = `${foundUser.role}${foundUser.position ? ' • ' + foundUser.position : ''}`;
+                document.getElementById('user-avatar').innerText = (foundUser.fullName || foundUser.username).charAt(0).toUpperCase();
+
+                // Hide Settings tab if not Admin
+                const settingsNav = document.getElementById('nav-settings');
+                if (foundUser.role !== 'Admin') {
+                    settingsNav.classList.add('hidden');
+                } else {
+                    settingsNav.classList.remove('hidden');
+                }
+
+                // Default opening screen: หน้าบันทึกเรื่องร้องเรียน
+                switchTab('form');
+                refreshAllViews();
+                showToast(`ยินดีต้อนรับคุณ ${foundUser.fullName || foundUser.username}`);
+            } else {
+                errBox.innerText = "ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง หรือยังไม่ได้ตั้งค่าผู้ใช้งานในฐานข้อมูล";
+                errBox.classList.remove('hidden');
+            }
+        });
+
+        window.logout = function() {
+            appState.currentUser = null;
+            document.getElementById('app-container').classList.add('hidden');
+            document.getElementById('login-modal').classList.remove('hidden');
+            document.getElementById('login-form').reset();
+        };
+
+        // -------------------------------------------------------------------------
+        // 4. NAVIGATION & UI HELPERS
+        // -------------------------------------------------------------------------
+        window.switchTab = function(tabName) {
+            const views = ['dashboard', 'form', 'complaints', 'settings'];
+            const titles = {
+                'form': 'บันทึกข้อมูลข้อร้องเรียนใหม่',
+                'complaints': 'รายการข้อร้องเรียนทั้งหมด',
+                'dashboard': 'แดชบอร์ดสรุปภาพรวม',
+                'settings': 'ตั้งค่าระบบและผู้ใช้งาน'
+            };
+
+            views.forEach(v => {
+                document.getElementById(`view-${v}`).classList.add('hidden');
+                const navBtn = document.getElementById(`nav-${v}`);
+                if (navBtn) {
+                    navBtn.classList.remove('bg-centralRed', 'text-white');
+                    navBtn.classList.add('text-slate-300', 'hover:bg-slate-800');
+                }
+            });
+
+            document.getElementById(`view-${tabName}`).classList.remove('hidden');
+            const activeBtn = document.getElementById(`nav-${tabName}`);
+            if (activeBtn) {
+                activeBtn.classList.add('bg-centralRed', 'text-white');
+                activeBtn.classList.remove('text-slate-300', 'hover:bg-slate-800');
+            }
+            document.getElementById('page-title').innerText = titles[tabName];
+
+            if (tabName === 'dashboard') updateDashboard();
+            if (tabName === 'complaints') renderComplaintsTable();
+            if (tabName === 'settings') renderSettings();
+            if (tabName === 'form') updateNextCaseIdDisplay();
+        };
+
+        function showToast(msg, isError = false) {
+            const toast = document.getElementById('toast-modal');
+            const icon = document.getElementById('toast-icon');
+            document.getElementById('toast-message').innerText = msg;
+            icon.className = isError ? 'fa-solid fa-circle-xmark text-red-400 text-lg' : 'fa-solid fa-circle-check text-green-400 text-lg';
+            
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3200);
+        }
+
+        function setDefaultDateTime() {
+            const now = new Date();
+            const yyyy = now.getFullYear();
+            const mm = String(now.getMonth() + 1).padStart(2, '0');
+            const dd = String(now.getDate()).padStart(2, '0');
+            const hh = String(now.getHours()).padStart(2, '0');
+            const min = String(now.getMinutes()).padStart(2, '0');
+            
+            const dateStr = `${yyyy}-${mm}-${dd}`;
+            const timeStr = `${hh}:${min}`;
+            const dateInput = document.getElementById('form-received-date');
+            const timeInput = document.getElementById('form-received-time');
+            if (dateInput) dateInput.value = dateStr;
+            if (timeInput) timeInput.value = timeStr;
+        }
+
+        function refreshAllViews() {
+            populateDropdowns();
+            updateNextCaseIdDisplay();
+            updateDashboard();
+            renderComplaintsTable();
+            renderSettings();
+        }
+
+        function populateDropdowns() {
+            // Branches
+            const branchSelects = ['form-branch', 'dash-filter-branch', 'edit-branch'];
+            branchSelects.forEach(id => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                const currentVal = el.value;
+                el.innerHTML = id === 'dash-filter-branch' ? '<option value="ALL">ทุกสาขา (All Branches)</option>' : '<option value="">-- เลือกสาขาเซ็นทรัล --</option>';
+                appState.branches.forEach(b => {
+                    el.innerHTML += `<option value="${b}">${b}</option>`;
+                });
+                if (currentVal) el.value = currentVal;
+            });
+
+            // Topics
+            const topicSelects = ['form-topic', 'dash-filter-topic', 'edit-topic'];
+            topicSelects.forEach(id => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                const currentVal = el.value;
+                el.innerHTML = id === 'dash-filter-topic' ? '<option value="ALL">ทุกหัวข้อ (All Topics)</option>' : '<option value="">-- เลือกหัวข้อ --</option>';
+                appState.topics.forEach(t => {
+                    el.innerHTML += `<option value="${t}">${t}</option>`;
+                });
+                if (currentVal) el.value = currentVal;
+            });
+
+            // Statuses
+            const statusSelects = ['form-status', 'list-filter-status', 'edit-status'];
+            statusSelects.forEach(id => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                const currentVal = el.value;
+                el.innerHTML = id === 'list-filter-status' ? '<option value="ALL">ทุกสถานะ</option>' : '<option value="">-- เลือกสถานะ --</option>';
+                appState.statuses.forEach(s => {
+                    el.innerHTML += `<option value="${s}">${s}</option>`;
+                });
+                if (currentVal) el.value = currentVal;
+            });
+
+            // Assignees
+            const assigneeSelects = ['form-assignee', 'edit-assignee'];
+            assigneeSelects.forEach(id => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                const currentVal = el.value;
+                el.innerHTML = '<option value="">-- เลือกผู้รับผิดชอบ --</option>';
+                appState.assignees.forEach(a => {
+                    el.innerHTML += `<option value="${a}">${a}</option>`;
+                });
+                if (currentVal) el.value = currentVal;
+            });
+        }
+
+        // -------------------------------------------------------------------------
+        // 5. NEW COMPLAINT SUBMISSION (Sequential ID: CDS0001+)
+        // -------------------------------------------------------------------------
+        document.getElementById('complaint-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const currentNum = appState.nextCaseNum || 1;
+            const generatedCaseId = formatCaseId(currentNum);
+            const recDate = document.getElementById('form-received-date').value;
+            const recTime = document.getElementById('form-received-time').value;
+
+            const newComplaint = {
+                id: generatedCaseId,
+                receivedDate: recDate,
+                receivedTimeOnly: recTime,
+                receivedTime: `${recDate} ${recTime}`,
+                title: document.getElementById('form-title').value.trim(),
+                branch: document.getElementById('form-branch').value,
+                topic: document.getElementById('form-topic').value,
+                status: document.getElementById('form-status').value,
+                assignee: document.getElementById('form-assignee').value,
+                description: document.getElementById('form-description').value.trim(),
+                resolutionDetails: '',
+                createdBy: appState.currentUser ? (appState.currentUser.fullName || appState.currentUser.username) : 'System',
+                lastEditedBy: '',
+                lastEditedAt: ''
+            };
+
+            appState.complaints.unshift(newComplaint);
+            // Increment sequential counter permanently (never rolls back on delete)
+            appState.nextCaseNum = currentNum + 1;
+
+            await saveAppState();
+            
+            this.reset();
+            setDefaultDateTime();
+            updateNextCaseIdDisplay();
+            showToast(`บันทึกข้อร้องเรียน ${generatedCaseId} เรียบร้อยแล้ว`);
+            switchTab('complaints');
+        });
+
+        // -------------------------------------------------------------------------
+        // 6. COMPLAINTS TABLE, VIEW, EDIT (WITH AUDIT TRAIL), PRINT & EXCEL EXPORT
+        // -------------------------------------------------------------------------
+        function getStatusBadge(status) {
+            if (status.includes('เรียบร้อย') || status.toLowerCase().includes('closed') || status.toLowerCase().includes('done')) {
+                return `<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">${status}</span>`;
+            } else if (status.includes('ตรวจสอบ') || status.includes('กำลัง')) {
+                return `<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">${status}</span>`;
+            } else {
+                return `<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700">${status}</span>`;
+            }
+        }
+
+        window.renderComplaintsTable = function() {
+            const tbody = document.getElementById('complaints-table-body');
+            if (!tbody) return;
+            const search = document.getElementById('list-search').value.toLowerCase();
+            const statusFilter = document.getElementById('list-filter-status').value;
+
+            const filtered = appState.complaints.filter(c => {
+                const matchSearch = c.id.toLowerCase().includes(search) || 
+                                    c.title.toLowerCase().includes(search) || 
+                                    c.branch.toLowerCase().includes(search) ||
+                                    c.assignee.toLowerCase().includes(search);
+                const matchStatus = statusFilter === 'ALL' || c.status === statusFilter;
+                return matchSearch && matchStatus;
+            });
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" class="py-8 text-center text-gray-400">ไม่พบรายการข้อร้องเรียน</td></tr>`;
+                return;
+            }
+
+            const canEdit = appState.currentUser && appState.currentUser.permissions.edit;
+            const canDelete = appState.currentUser && appState.currentUser.permissions.delete;
+
+            tbody.innerHTML = filtered.map(c => {
+                const displayReceived = (c.receivedDate && c.receivedTimeOnly) ? `${c.receivedDate} ${c.receivedTimeOnly}` : (c.receivedTime || '-');
+                return `
+                <tr class="hover:bg-gray-50 transition">
+                    <td class="py-3.5 px-4 font-mono font-bold text-xs text-centralRed">${c.id}</td>
+                    <td class="py-3.5 px-4 text-xs text-gray-600 whitespace-nowrap">${displayReceived}</td>
+                    <td class="py-3.5 px-4 font-medium text-gray-900 max-w-xs truncate" title="${c.title}">${c.title}</td>
+                    <td class="py-3.5 px-4 text-xs text-gray-700">${c.branch}</td>
+                    <td class="py-3.5 px-4 text-xs text-gray-600">${c.topic}</td>
+                    <td class="py-3.5 px-4 text-xs font-medium text-gray-800">${c.assignee}</td>
+                    <td class="py-3.5 px-4 text-center whitespace-nowrap">${getStatusBadge(c.status)}</td>
+                    <td class="py-3.5 px-4 text-center whitespace-nowrap">
+                        <div class="flex items-center justify-center space-x-1.5">
+                            <button onclick="viewComplaint('${c.id}')" title="ดูรายละเอียด (View)" class="p-2 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg transition">
+                                <i class="fa-solid fa-eye"></i>
+                            </button>
+                            ${canEdit ? `
+                            <button onclick="openEditComplaintModal('${c.id}')" title="แก้ไขข้อมูล / อัปเดตสถานะ (Edit)" class="p-2 bg-amber-50 hover:bg-amber-100 text-amber-600 rounded-lg transition">
+                                <i class="fa-solid fa-pen-to-square"></i>
+                            </button>` : ''}
+                            <button onclick="printSpecificComplaint('${c.id}')" title="พิมพ์ / Export PDF" class="p-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition">
+                                <i class="fa-solid fa-print"></i>
+                            </button>
+                            ${canDelete ? `
+                            <button onclick="confirmDeleteComplaint('${c.id}')" title="ลบข้อมูล (Delete)" class="p-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>` : ''}
+                        </div>
+                    </td>
+                </tr>
+                `;
+            }).join('');
+        };
+
+        // Open Edit Modal for Complaint
+        window.openEditComplaintModal = function(id) {
+            const c = appState.complaints.find(item => item.id === id);
+            if (!c) return;
+
+            populateDropdowns();
+            document.getElementById('edit-id').value = c.id;
+            document.getElementById('edit-case-id-badge').innerText = c.id;
+
+            // Parse existing date & time
+            let rDate = c.receivedDate || '';
+            let rTime = c.receivedTimeOnly || '';
+            if ((!rDate || !rTime) && c.receivedTime) {
+                const parts = c.receivedTime.split(' ');
+                rDate = rDate || (parts[0] || '');
+                rTime = rTime || (parts[1] || '');
+            }
+            document.getElementById('edit-received-date').value = rDate;
+            document.getElementById('edit-received-time').value = rTime;
+
+            document.getElementById('edit-title').value = c.title;
+            document.getElementById('edit-branch').value = c.branch;
+            document.getElementById('edit-topic').value = c.topic;
+            document.getElementById('edit-status').value = c.status;
+            document.getElementById('edit-assignee').value = c.assignee;
+            document.getElementById('edit-description').value = c.description;
+            document.getElementById('edit-resolution').value = c.resolutionDetails || '';
+
+            toggleResolutionField();
+
+            const editorName = appState.currentUser ? (appState.currentUser.fullName || appState.currentUser.username) : 'System';
+            document.getElementById('edit-editor-preview').innerText = editorName;
+
+            document.getElementById('edit-complaint-modal').classList.remove('hidden');
+        };
+
+        window.toggleResolutionField = function() {
+            const statusVal = document.getElementById('edit-status').value;
+            const wrapper = document.getElementById('edit-resolution-wrapper');
+            const textarea = document.getElementById('edit-resolution');
+            if (statusVal && (statusVal.includes('เรียบร้อย') || statusVal.toLowerCase().includes('closed') || statusVal.toLowerCase().includes('done'))) {
+                wrapper.classList.remove('hidden');
+                textarea.setAttribute('required', 'required');
+            } else {
+                wrapper.classList.add('hidden');
+                textarea.removeAttribute('required');
+            }
+        };
+
+        window.closeEditComplaintModal = function() {
+            document.getElementById('edit-complaint-modal').classList.add('hidden');
+        };
+
+        document.getElementById('edit-complaint-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const id = document.getElementById('edit-id').value;
+            const idx = appState.complaints.findIndex(item => item.id === id);
+            if (idx === -1) return;
+
+            const now = new Date();
+            const editDateStr = now.toLocaleDateString('th-TH', { year: 'numeric', month: '2-digit', day: '2-digit' });
+            const editTimeStr = now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            const editorName = appState.currentUser ? (appState.currentUser.fullName || appState.currentUser.username) : 'System';
+
+            const rDate = document.getElementById('edit-received-date').value;
+            const rTime = document.getElementById('edit-received-time').value;
+            const updatedStatus = document.getElementById('edit-status').value;
+            const resolutionText = document.getElementById('edit-resolution').value.trim();
+
+            appState.complaints[idx] = {
+                ...appState.complaints[idx],
+                receivedDate: rDate,
+                receivedTimeOnly: rTime,
+                receivedTime: `${rDate} ${rTime}`,
+                title: document.getElementById('edit-title').value.trim(),
+                branch: document.getElementById('edit-branch').value,
+                topic: document.getElementById('edit-topic').value,
+                status: updatedStatus,
+                assignee: document.getElementById('edit-assignee').value,
+                description: document.getElementById('edit-description').value.trim(),
+                resolutionDetails: resolutionText,
+                lastEditedBy: editorName,
+                lastEditedAt: `วันที่ ${editDateStr} เวลา ${editTimeStr} น.`
+            };
+
+            await saveAppState();
+            closeEditComplaintModal();
+            refreshAllViews();
+            showToast(`อัปเดตข้อมูลเคส ${id} เรียบร้อยแล้ว`);
+        });
+
+        window.viewComplaint = function(id) {
+            const c = appState.complaints.find(item => item.id === id);
+            if (!c) return;
+
+            const displayReceived = (c.receivedDate && c.receivedTimeOnly) ? `${c.receivedDate} เวลา ${c.receivedTimeOnly} น.` : (c.receivedTime || '-');
+
+            document.getElementById('detail-id').innerText = c.id;
+            document.getElementById('detail-branch').innerText = c.branch;
+            document.getElementById('detail-status').innerHTML = getStatusBadge(c.status);
+            document.getElementById('detail-received-time').innerText = displayReceived;
+            document.getElementById('detail-topic').innerText = c.topic;
+            document.getElementById('detail-assignee').innerText = c.assignee;
+            document.getElementById('detail-title').innerText = c.title;
+            document.getElementById('detail-description').innerText = c.description;
+
+            const resBox = document.getElementById('detail-resolution-box');
+            const resText = document.getElementById('detail-resolution');
+            if (c.resolutionDetails && c.resolutionDetails.trim() !== '') {
+                resText.innerText = c.resolutionDetails;
+                resBox.classList.remove('hidden');
+            } else {
+                resBox.classList.add('hidden');
+            }
+
+            document.getElementById('detail-created-by').innerText = c.createdBy || 'System';
+            document.getElementById('detail-recorder').innerText = c.createdBy || 'เจ้าหน้าที่ระบบ';
+            document.getElementById('detail-last-edited').innerText = c.lastEditedBy 
+                ? `แก้ไขโดย ${c.lastEditedBy} (${c.lastEditedAt})` 
+                : 'ยังไม่มีการแก้ไขข้อมูล';
+            document.getElementById('detail-print-date').innerText = new Date().toLocaleDateString('th-TH');
+
+            document.getElementById('detail-modal').classList.remove('hidden');
+        };
+
+        window.closeDetailModal = function() {
+            document.getElementById('detail-modal').classList.add('hidden');
+        };
+
+        window.printComplaint = function() {
+            const printContent = document.getElementById('print-area').innerHTML;
+            const printFrame = document.getElementById('print-iframe');
+            const doc = printFrame.contentWindow.document;
+
+            doc.open();
+            doc.write(`
+                <!DOCTYPE html>
+                <html lang="th">
+                <head>
+                    <meta charset="UTF-8">
+                    <title>CDS Whistleblower Official Report</title>
+                    <script src="https://cdn.tailwindcss.com"><\/script>
+                    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+                    <style>
+                        body { font-family: 'Prompt', sans-serif; padding: 24px; color: #111827; background: #ffffff; }
+                        .bg-centralRed { background-color: #E11D48 !important; color: #ffffff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                        .text-centralRed { color: #E11D48 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                        .border-centralRed { border-color: #E11D48 !important; }
+                        @page { size: A4; margin: 15mm; }
+                    </style>
+                </head>
+                <body>
+                    <div class="space-y-6">${printContent}</div>
+                    <script>
+                        window.onload = function() {
+                            setTimeout(function() {
+                                window.focus();
+                                window.print();
+                            }, 350);
+                        };
+                    <\/script>
+                </body>
+                </html>
+            `);
+            doc.close();
+        };
+
+        window.printSpecificComplaint = function(id) {
+            viewComplaint(id);
+            setTimeout(() => {
+                printComplaint();
+            }, 250);
+        };
+
+        // Delete Complaint with Custom Confirmation Modal (Does NOT decrement nextCaseNum)
+        window.confirmDeleteComplaint = function(id) {
+            const modal = document.getElementById('confirm-modal');
+            document.getElementById('confirm-title').innerText = `ยืนยันการลบข้อร้องเรียน (${id})`;
+            document.getElementById('confirm-text').innerText = 'คุณแน่ใจหรือไม่ว่าต้องการลบรายการข้อร้องเรียนนี้? (เลขรัน ID ถัดไปจะรันต่อเนื่องตามปกติ)';
+            modal.classList.remove('hidden');
+
+            document.getElementById('confirm-cancel-btn').onclick = () => modal.classList.add('hidden');
+            document.getElementById('confirm-ok-btn').onclick = async () => {
+                appState.complaints = appState.complaints.filter(c => c.id !== id);
+                await saveAppState();
+                modal.classList.add('hidden');
+                refreshAllViews();
+                showToast(`ลบข้อร้องเรียน ${id} เรียบร้อยแล้ว`);
+            };
+        };
+
+        // Styled Excel Export for Complaints List
+        window.exportTableToExcel = function() {
+            if (typeof XLSX === 'undefined') {
+                showToast('กำลังโหลดไลบรารี Excel กรุณาลองใหม่อีกครั้ง', true);
+                return;
+            }
+
+            const nowStr = new Date().toLocaleDateString('th-TH', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+            
+            const headerStyle = {
+                font: { bold: true, color: { rgb: "FFFFFF" }, name: "Tahoma", sz: 11 },
+                fill: { fgColor: { rgb: "0F172A" } },
+                alignment: { horizontal: "center", vertical: "center", wrapText: true },
+                border: {
+                    top: { style: "thin", color: { rgb: "CBD5E1" } },
+                    bottom: { style: "thin", color: { rgb: "CBD5E1" } },
+                    left: { style: "thin", color: { rgb: "CBD5E1" } },
+                    right: { style: "thin", color: { rgb: "CBD5E1" } }
+                }
+            };
+
+            const titleStyle = {
+                font: { bold: true, color: { rgb: "FFFFFF" }, name: "Tahoma", sz: 14 },
+                fill: { fgColor: { rgb: "E11D48" } },
+                alignment: { horizontal: "center", vertical: "center" }
+            };
+
+            const subtitleStyle = {
+                font: { italic: true, color: { rgb: "475569" }, name: "Tahoma", sz: 10 },
+                fill: { fgColor: { rgb: "FFF1F2" } },
+                alignment: { horizontal: "center", vertical: "center" }
+            };
+
+            const wsData = [
+                [{ v: "CENTRAL DEPARTMENT STORE - WHISTLEBLOWER & COMPLAINT REPORT", s: titleStyle }],
+                [{ v: `รายงานสรุปข้อมูลข้อร้องเรียนทั้งหมด | วันที่ออกรายงาน: ${nowStr}`, s: subtitleStyle }],
+                [],
+                [
+                    { v: "ID : Case", s: headerStyle },
+                    { v: "วันที่ได้รับเรื่อง", s: headerStyle },
+                    { v: "เวลาที่ได้รับเรื่อง", s: headerStyle },
+                    { v: "ชื่อเรื่องข้อร้องเรียน", s: headerStyle },
+                    { v: "สาขาเซ็นทรัล", s: headerStyle },
+                    { v: "หัวข้อ / พฤติกรรม", s: headerStyle },
+                    { v: "รายละเอียดข้อร้องเรียน", s: headerStyle },
+                    { v: "รายละเอียดการดำเนินการแก้ไข", s: headerStyle },
+                    { v: "ผู้รับผิดชอบดำเนินการ", s: headerStyle },
+                    { v: "สถานะการดำเนินการ", s: headerStyle },
+                    { v: "ผู้บันทึกเข้าระบบ", s: headerStyle },
+                    { v: "ประวัติการแก้ไขล่าสุด", s: headerStyle }
+                ]
+            ];
+
+            appState.complaints.forEach((c, idx) => {
+                const rowBg = idx % 2 === 0 ? "FFFFFF" : "F8FAFC";
+                const isDone = c.status.includes('เรียบร้อย') || c.status.toLowerCase().includes('closed');
+                const statusBg = isDone ? "DCFCE7" : (c.status.includes('ตรวจสอบ') ? "DBEAFE" : "FEF3C7");
+                const statusColor = isDone ? "15803D" : (c.status.includes('ตรวจสอบ') ? "1D4ED8" : "B45309");
+
+                let rDate = c.receivedDate || '';
+                let rTime = c.receivedTimeOnly || '';
+                if ((!rDate || !rTime) && c.receivedTime) {
+                    const parts = c.receivedTime.split(' ');
+                    rDate = rDate || (parts[0] || '-');
+                    rTime = rTime || (parts[1] || '-');
+                }
+
+                const cellStyle = (align = "left", bold = false, color = "1E293B", bg = rowBg) => ({
+                    font: { name: "Tahoma", sz: 10, bold: bold, color: { rgb: color } },
+                    fill: { fgColor: { rgb: bg } },
+                    alignment: { horizontal: align, vertical: "top", wrapText: true },
+                    border: {
+                        top: { style: "thin", color: { rgb: "E2E8F0" } },
+                        bottom: { style: "thin", color: { rgb: "E2E8F0" } },
+                        left: { style: "thin", color: { rgb: "E2E8F0" } },
+                        right: { style: "thin", color: { rgb: "E2E8F0" } }
+                    }
+                });
+
+                wsData.push([
+                    { v: c.id, s: cellStyle("center", true, "E11D48") },
+                    { v: rDate, s: cellStyle("center") },
+                    { v: rTime, s: cellStyle("center") },
+                    { v: c.title, s: cellStyle("left", true) },
+                    { v: c.branch, s: cellStyle("left") },
+                    { v: c.topic, s: cellStyle("left") },
+                    { v: c.description, s: cellStyle("left") },
+                    { v: c.resolutionDetails || '-', s: cellStyle("left") },
+                    { v: c.assignee, s: cellStyle("left") },
+                    { v: c.status, s: cellStyle("center", true, statusColor, statusBg) },
+                    { v: c.createdBy || 'System', s: cellStyle("center") },
+                    { v: c.lastEditedBy ? `${c.lastEditedBy} (${c.lastEditedAt})` : 'ไม่มีการแก้ไข', s: cellStyle("left") }
+                ]);
+            });
+
+            const ws = XLSX.utils.aoa_to_sheet(wsData);
+            ws['!merges'] = [
+                { s: { r: 0, c: 0 }, e: { r: 0, c: 11 } },
+                { s: { r: 1, c: 0 }, e: { r: 1, c: 11 } }
+            ];
+            ws['!cols'] = [
+                { wch: 14 }, { wch: 16 }, { wch: 14 }, { wch: 32 },
+                { wch: 28 }, { wch: 26 }, { wch: 45 }, { wch: 40 },
+                { wch: 26 }, { wch: 22 }, { wch: 20 }, { wch: 32 }
+            ];
+            ws['!rows'] = [{ hpt: 32 }, { hpt: 22 }, { hpt: 10 }, { hpt: 28 }];
+
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Complaints_Report");
+            XLSX.writeFile(wb, `CDS_Whistleblower_Report_${new Date().toISOString().slice(0,10)}.xlsx`);
+            showToast('ส่งออกไฟล์ Excel ตกแต่งสวยงามเรียบร้อยแล้ว');
+        };
+
+        // -------------------------------------------------------------------------
+        // 7. DASHBOARD ANALYTICS, CHARTS & STYLED EXCEL EXPORT
+        // -------------------------------------------------------------------------
+        let statusChartInstance = null;
+        let topicChartInstance = null;
+
+        window.updateDashboard = function() {
+            const branchFilter = document.getElementById('dash-filter-branch').value;
+            const topicFilter = document.getElementById('dash-filter-topic').value;
+
+            const filtered = appState.complaints.filter(c => {
+                const matchBranch = branchFilter === 'ALL' || c.branch === branchFilter;
+                const matchTopic = topicFilter === 'ALL' || c.topic === topicFilter;
+                return matchBranch && matchTopic;
+            });
+
+            const total = filtered.length;
+            const closed = filtered.filter(c => c.status.includes('เรียบร้อย') || c.status.toLowerCase().includes('closed')).length;
+            const pending = total - closed;
+
+            document.getElementById('kpi-total').innerText = total;
+            document.getElementById('kpi-pending').innerText = pending;
+            document.getElementById('kpi-closed').innerText = closed;
+
+            renderStatusChart(pending, closed);
+            renderTopicChart(filtered);
+            renderBranchSummaryTable(filtered);
+        };
+
+        function renderStatusChart(pending, closed) {
+            const ctx = document.getElementById('statusChart').getContext('2d');
+            if (statusChartInstance) statusChartInstance.destroy();
+
+            statusChartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['เคสคงค้าง (Pending)', 'เคสที่ปิดแล้ว (Closed)'],
+                    datasets: [{
+                        data: [pending, closed],
+                        backgroundColor: ['#F59E0B', '#10B981'],
+                        borderWidth: 0,
+                        hoverOffset: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { font: { family: 'Prompt', size: 12 } } }
+                    },
+                    cutout: '65%'
+                }
+            });
+        }
+
+        function renderTopicChart(filteredData) {
+            const ctx = document.getElementById('topicChart').getContext('2d');
+            if (topicChartInstance) topicChartInstance.destroy();
+
+            const topicCounts = {};
+            appState.topics.forEach(t => topicCounts[t] = 0);
+            filteredData.forEach(c => {
+                topicCounts[c.topic] = (topicCounts[c.topic] || 0) + 1;
+            });
+
+            topicChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(topicCounts),
+                    datasets: [{
+                        label: 'จำนวนเรื่องร้องเรียน (เคส)',
+                        data: Object.values(topicCounts),
+                        backgroundColor: '#E11D48',
+                        borderRadius: 8,
+                        barThickness: 32
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, ticks: { stepSize: 1, font: { family: 'Prompt' } } },
+                        x: { ticks: { font: { family: 'Prompt', size: 11 } } }
+                    }
+                }
+            });
+        }
+
+        function renderBranchSummaryTable(filteredData) {
+            const tbody = document.getElementById('dash-branch-table');
+            if (!tbody) return;
+
+            const branchMap = {};
+            filteredData.forEach(c => {
+                if (!branchMap[c.branch]) branchMap[c.branch] = { total: 0, pending: 0, closed: 0 };
+                branchMap[c.branch].total++;
+                if (c.status.includes('เรียบร้อย') || c.status.toLowerCase().includes('closed')) {
+                    branchMap[c.branch].closed++;
+                } else {
+                    branchMap[c.branch].pending++;
+                }
+            });
+
+            const entries = Object.entries(branchMap);
+            if (entries.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="py-6 text-center text-gray-400">ไม่มีข้อมูลในตัวกรองที่เลือก</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = entries.map(([branch, stats]) => `
+                <tr class="hover:bg-gray-50">
+                    <td class="py-3 px-4 font-medium text-gray-800">${branch}</td>
+                    <td class="py-3 px-4 text-center font-bold">${stats.total}</td>
+                    <td class="py-3 px-4 text-center font-semibold text-amber-600">${stats.pending}</td>
+                    <td class="py-3 px-4 text-center font-semibold text-emerald-600">${stats.closed}</td>
+                </tr>
+            `).join('');
+        }
+
+        window.exportDashboardExcel = function() {
+            if (typeof XLSX === 'undefined') {
+                showToast('กำลังโหลดไลบรารี Excel กรุณาลองใหม่อีกครั้ง', true);
+                return;
+            }
+
+            const branchFilter = document.getElementById('dash-filter-branch').value;
+            const topicFilter = document.getElementById('dash-filter-topic').value;
+            const filtered = appState.complaints.filter(c => {
+                const matchBranch = branchFilter === 'ALL' || c.branch === branchFilter;
+                const matchTopic = topicFilter === 'ALL' || c.topic === topicFilter;
+                return matchBranch && matchTopic;
+            });
+
+            const total = filtered.length;
+            const closed = filtered.filter(c => c.status.includes('เรียบร้อย') || c.status.toLowerCase().includes('closed')).length;
+            const pending = total - closed;
+
+            const titleStyle = {
+                font: { bold: true, color: { rgb: "FFFFFF" }, name: "Tahoma", sz: 14 },
+                fill: { fgColor: { rgb: "E11D48" } },
+                alignment: { horizontal: "center", vertical: "center" }
+            };
+            const headerStyle = {
+                font: { bold: true, color: { rgb: "FFFFFF" }, name: "Tahoma", sz: 11 },
+                fill: { fgColor: { rgb: "0F172A" } },
+                alignment: { horizontal: "center", vertical: "center" },
+                border: { top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" } }
+            };
+            const cellStyle = (align = "left", bold = false, color = "1E293B", bg = "FFFFFF") => ({
+                font: { name: "Tahoma", sz: 10, bold: bold, color: { rgb: color } },
+                fill: { fgColor: { rgb: bg } },
+                alignment: { horizontal: align, vertical: "center" },
+                border: { top: { style: "thin", color: { rgb: "CBD5E1" } }, bottom: { style: "thin", color: { rgb: "CBD5E1" } }, left: { style: "thin", color: { rgb: "CBD5E1" } }, right: { style: "thin", color: { rgb: "CBD5E1" } } }
+            });
+
+            const wsData = [
+                [{ v: "CDS WHISTLEBLOWER - EXECUTIVE DASHBOARD SUMMARY", s: titleStyle }],
+                [{ v: `ตัวกรองสาขา: ${branchFilter} | ตัวกรองหัวข้อ: ${topicFilter} | วันที่ออกรายงาน: ${new Date().toLocaleDateString('th-TH')}`, s: cellStyle("center", true, "475569", "FFF1F2") }],
+                [],
+                [{ v: "สรุปภาพรวมจำนวนเคส (KPI SUMMARY)", s: headerStyle }, { v: "จำนวน (เคส)", s: headerStyle }],
+                [{ v: "เรื่องร้องเรียนทั้งหมด (Total Cases)", s: cellStyle("left", true) }, { v: total, s: cellStyle("center", true, "1D4ED8", "EFF6FF") }],
+                [{ v: "เคสคงค้าง / รอดำเนินการ (Pending)", s: cellStyle("left", true) }, { v: pending, s: cellStyle("center", true, "B45309", "FEF3C7") }],
+                [{ v: "เคสที่ปิดแล้ว (Closed / Resolved)", s: cellStyle("left", true) }, { v: closed, s: cellStyle("center", true, "15803D", "DCFCE7") }],
+                [],
+                [
+                    { v: "สาขาเซ็นทรัล (Central Branch)", s: headerStyle },
+                    { v: "เคสทั้งหมด", s: headerStyle },
+                    { v: "เคสคงค้าง (Pending)", s: headerStyle },
+                    { v: "เคสที่ปิดแล้ว (Closed)", s: headerStyle }
+                ]
+            ];
+
+            const branchMap = {};
+            filtered.forEach(c => {
+                if (!branchMap[c.branch]) branchMap[c.branch] = { total: 0, pending: 0, closed: 0 };
+                branchMap[c.branch].total++;
+                if (c.status.includes('เรียบร้อย') || c.status.toLowerCase().includes('closed')) branchMap[c.branch].closed++;
+                else branchMap[c.branch].pending++;
+            });
+
+            Object.entries(branchMap).forEach(([branch, stats], idx) => {
+                const bg = idx % 2 === 0 ? "FFFFFF" : "F8FAFC";
+                wsData.push([
+                    { v: branch, s: cellStyle("left", false, "1E293B", bg) },
+                    { v: stats.total, s: cellStyle("center", true, "0F172A", bg) },
+                    { v: stats.pending, s: cellStyle("center", true, "B45309", bg) },
+                    { v: stats.closed, s: cellStyle("center", true, "15803D", bg) }
+                ]);
+            });
+
+            const ws = XLSX.utils.aoa_to_sheet(wsData);
+            ws['!merges'] = [
+                { s: { r: 0, c: 0 }, e: { r: 0, c: 3 } },
+                { s: { r: 1, c: 0 }, e: { r: 1, c: 3 } }
+            ];
+            ws['!cols'] = [{ wch: 38 }, { wch: 18 }, { wch: 22 }, { wch: 22 }];
+            ws['!rows'] = [{ hpt: 32 }, { hpt: 22 }];
+
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Dashboard_Summary");
+            XLSX.writeFile(wb, `CDS_Dashboard_Summary_${new Date().toISOString().slice(0,10)}.xlsx`);
+            showToast('ส่งออกไฟล์ Excel หน้าแดชบอร์ดเรียบร้อยแล้ว');
+        };
+
+        // -------------------------------------------------------------------------
+        // 8. SYSTEM SETTINGS & USER MANAGEMENT (WITH FULL NAME, POSITION, PENCIL EDIT)
+        // -------------------------------------------------------------------------
+        window.renderSettings = function() {
+            // Render Dropdown Lists as structured tables with Edit (Pencil) and Delete buttons
+            const renderList = (key, elementId) => {
+                const tbody = document.getElementById(elementId);
+                if (!tbody) return;
+                if (appState[key].length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="2" class="py-3 px-3 text-center text-gray-400">ยังไม่มีรายการ</td></tr>`;
+                    return;
+                }
+                tbody.innerHTML = appState[key].map((item, idx) => `
+                    <tr class="hover:bg-gray-50 transition">
+                        <td class="py-2.5 px-3 text-gray-700 font-medium">${item}</td>
+                        <td class="py-2.5 px-3 text-right whitespace-nowrap space-x-1">
+                            <button onclick="openEditDropdownModal('${key}', ${idx})" title="แก้ไขรายการ" class="p-1.5 text-amber-600 hover:bg-amber-50 rounded-md transition">
+                                <i class="fa-solid fa-pencil"></i>
+                            </button>
+                            <button onclick="removeDropdownItem('${key}', ${idx})" title="ลบรายการ" class="p-1.5 text-red-500 hover:bg-red-50 rounded-md transition">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+            };
+
+            renderList('topics', 'settings-topics-list');
+            renderList('statuses', 'settings-statuses-list');
+            renderList('assignees', 'settings-assignees-list');
+            renderList('branches', 'settings-branches-list');
+
+            // Render Users Table with Full Name, Position, Edit (Pencil) & Delete icons
+            const usersTbody = document.getElementById('users-table-body');
+            if (!usersTbody) return;
+            usersTbody.innerHTML = appState.users.map(u => `
+                <tr class="hover:bg-gray-50">
+                    <td class="py-3 px-4">
+                        <div class="font-bold text-gray-900 text-xs">${u.fullName || u.username}</div>
+                        <div class="text-[11px] text-gray-500">${u.position || 'ไม่ระบุตำแหน่ง'}</div>
+                    </td>
+                    <td class="py-3 px-4">
+                        <div class="font-semibold text-gray-800 text-xs">${u.username}</div>
+                        <div class="text-[11px] text-gray-400 font-mono">รหัส: ${'•'.repeat(Math.min(u.password.length, 8))}</div>
+                    </td>
+                    <td class="py-3 px-4">
+                        <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold ${u.role === 'Admin' ? 'bg-red-100 text-centralRed' : 'bg-gray-100 text-gray-700'}">${u.role}</span>
+                    </td>
+                    <td class="py-3 px-4 text-xs space-x-1">
+                        <span class="px-2 py-0.5 rounded ${u.permissions.view ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-400'}">ดู</span>
+                        <span class="px-2 py-0.5 rounded ${u.permissions.edit ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-400'}">แก้ไข</span>
+                        <span class="px-2 py-0.5 rounded ${u.permissions.delete ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-400'}">ลบ</span>
+                    </td>
+                    <td class="py-3 px-4 text-center whitespace-nowrap space-x-1">
+                        <button onclick="openEditUserModal('${u.id}')" title="แก้ไขข้อมูล / รหัสผ่าน / สิทธิ์" class="p-1.5 bg-amber-50 hover:bg-amber-100 text-amber-600 rounded-lg transition">
+                            <i class="fa-solid fa-pencil"></i>
+                        </button>
+                        ${u.username !== 'admin' ? `
+                        <button onclick="deleteUser('${u.id}')" title="ลบผู้ใช้" class="p-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>` : ''}
+                    </td>
+                </tr>
+            `).join('');
+        };
+
+        window.addDropdownItem = async function(key, inputId) {
+            const input = document.getElementById(inputId);
+            const val = input.value.trim();
+            if (!val) return;
+            if (appState[key].includes(val)) {
+                showToast('มีรายการนี้อยู่ในระบบแล้ว', true);
+                return;
+            }
+            appState[key].push(val);
+            input.value = '';
+            await saveAppState();
+            refreshAllViews();
+            showToast('เพิ่มรายการตัวเลือกเรียบร้อยแล้ว');
+        };
+
+        window.openEditDropdownModal = function(key, index) {
+            const titles = {
+                topics: 'แก้ไขหัวข้อข้อร้องเรียน (Topic)',
+                statuses: 'แก้ไขสถานะการดำเนินการ (Status)',
+                assignees: 'แก้ไขรายชื่อผู้รับผิดชอบ (Assignee)',
+                branches: 'แก้ไขชื่อสาขาเซ็นทรัล (Central Branch)'
+            };
+            document.getElementById('edit-dropdown-title').innerText = titles[key] || 'แก้ไขรายการตัวเลือก';
+            document.getElementById('edit-dropdown-type').value = key;
+            document.getElementById('edit-dropdown-index').value = index;
+            document.getElementById('edit-dropdown-value').value = appState[key][index];
+            document.getElementById('edit-dropdown-modal').classList.remove('hidden');
+        };
+
+        window.closeEditDropdownModal = function() {
+            document.getElementById('edit-dropdown-modal').classList.add('hidden');
+        };
+
+        document.getElementById('edit-dropdown-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const key = document.getElementById('edit-dropdown-type').value;
+            const index = parseInt(document.getElementById('edit-dropdown-index').value, 10);
+            const newVal = document.getElementById('edit-dropdown-value').value.trim();
+            if (!newVal) return;
+
+            const oldVal = appState[key][index];
+            appState[key][index] = newVal;
+
+            // Sync existing complaint records if the renamed option was used
+            if (oldVal && oldVal !== newVal) {
+                appState.complaints.forEach(c => {
+                    if (key === 'topics' && c.topic === oldVal) c.topic = newVal;
+                    if (key === 'statuses' && c.status === oldVal) c.status = newVal;
+                    if (key === 'assignees' && c.assignee === oldVal) c.assignee = newVal;
+                    if (key === 'branches' && c.branch === oldVal) c.branch = newVal;
+                });
+            }
+
+            await saveAppState();
+            closeEditDropdownModal();
+            refreshAllViews();
+            showToast('แก้ไขรายการตัวเลือกเรียบร้อยแล้ว');
+        });
+
+        window.removeDropdownItem = async function(key, index) {
+            if (appState[key].length <= 1) {
+                showToast('ต้องมีรายการอย่างน้อย 1 รายการในระบบ', true);
+                return;
+            }
+            appState[key].splice(index, 1);
+            await saveAppState();
+            refreshAllViews();
+            showToast('ลบรายการตัวเลือกเรียบร้อยแล้ว');
+        };
+
+        // Add User Form
+        document.getElementById('add-user-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const fullName = document.getElementById('new-user-fullname').value.trim();
+            const position = document.getElementById('new-user-position').value.trim();
+            const username = document.getElementById('new-user-username').value.trim();
+            const password = document.getElementById('new-user-password').value.trim();
+            const role = document.getElementById('new-user-role').value;
+
+            if (appState.users.some(u => u.username.toLowerCase() === username.toLowerCase())) {
+                showToast('Username นี้มีผู้ใช้งานแล้ว', true);
+                return;
+            }
+
+            const newUser = {
+                id: 'u-' + Date.now(),
+                fullName,
+                position,
+                username,
+                password,
+                role,
+                permissions: {
+                    view: document.getElementById('perm-view').checked,
+                    edit: document.getElementById('perm-edit').checked,
+                    delete: document.getElementById('perm-delete').checked
+                }
+            };
+
+            appState.users.push(newUser);
+            await saveAppState();
+            this.reset();
+            document.getElementById('perm-view').checked = true;
+            renderSettings();
+            showToast(`เพิ่มผู้ใช้งาน ${fullName} (${username}) สำเร็จ`);
+        });
+
+        // Open Edit User Modal (Edit Full Name, Position, Password, Role & Permissions)
+        window.openEditUserModal = function(userId) {
+            const u = appState.users.find(item => item.id === userId);
+            if (!u) return;
+
+            document.getElementById('edit-user-id').value = u.id;
+            document.getElementById('edit-user-fullname').value = u.fullName || '';
+            document.getElementById('edit-user-position').value = u.position || '';
+            document.getElementById('edit-user-username').value = u.username;
+            document.getElementById('edit-user-password').value = u.password;
+            document.getElementById('edit-user-role').value = u.role;
+            document.getElementById('edit-perm-view').checked = !!u.permissions.view;
+            document.getElementById('edit-perm-edit').checked = !!u.permissions.edit;
+            document.getElementById('edit-perm-delete').checked = !!u.permissions.delete;
+
+            document.getElementById('edit-user-modal').classList.remove('hidden');
+        };
+
+        window.closeEditUserModal = function() {
+            document.getElementById('edit-user-modal').classList.add('hidden');
+        };
+
+        document.getElementById('edit-user-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const userId = document.getElementById('edit-user-id').value;
+            const idx = appState.users.findIndex(u => u.id === userId);
+            if (idx === -1) return;
+
+            const newUsername = document.getElementById('edit-user-username').value.trim();
+            if (appState.users.some((u, i) => i !== idx && u.username.toLowerCase() === newUsername.toLowerCase())) {
+                showToast('Username นี้ซ้ำกับผู้ใช้งานอื่น', true);
+                return;
+            }
+
+            appState.users[idx] = {
+                ...appState.users[idx],
+                fullName: document.getElementById('edit-user-fullname').value.trim(),
+                position: document.getElementById('edit-user-position').value.trim(),
+                username: newUsername,
+                password: document.getElementById('edit-user-password').value.trim(),
+                role: document.getElementById('edit-user-role').value,
+                permissions: {
+                    view: document.getElementById('edit-perm-view').checked,
+                    edit: document.getElementById('edit-perm-edit').checked,
+                    delete: document.getElementById('edit-perm-delete').checked
+                }
+            };
+
+            // Update current session if editing own user
+            if (appState.currentUser && appState.currentUser.id === userId) {
+                appState.currentUser = appState.users[idx];
+                document.getElementById('current-user-name').innerText = appState.currentUser.fullName || appState.currentUser.username;
+                document.getElementById('current-user-role').innerText = `${appState.currentUser.role}${appState.currentUser.position ? ' • ' + appState.currentUser.position : ''}`;
+            }
+
+            await saveAppState();
+            closeEditUserModal();
+            refreshAllViews();
+            showToast('อัปเดตข้อมูลผู้ใช้งานและรหัสผ่านเรียบร้อยแล้ว');
+        });
+
+        window.deleteUser = async function(userId) {
+            appState.users = appState.users.filter(u => u.id !== userId);
+            await saveAppState();
+            renderSettings();
+            showToast('ลบผู้ใช้งานออกจากระบบแล้ว');
+        };
+    </script>
+</body>
+</html>

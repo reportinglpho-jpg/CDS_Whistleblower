@@ -1,0 +1,23 @@
+{
+  "cds_whistleblower": {
+    "central-whistleblower-prod": {
+      "main_state": {
+        "users": [
+          {
+            "id": "u1",
+            "fullName": "ผู้ดูแลระบบหลัก",
+            "position": "Admin",
+            "username": "admin",
+            "password": "20033457",
+            "role": "Admin",
+            "permissions": {
+              "view": true,
+              "edit": true,
+              "delete": true
+            }
+          }
+        ]
+      }
+    }
+  }
+}
