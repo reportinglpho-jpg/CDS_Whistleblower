@@ -550,8 +550,8 @@
                     </div>
                 </div>
 
-                <!-- Charts Grid -->
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Charts Section (Stacked Full-Width for Clarity) -->
+                <div class="space-y-6">
                     <!-- Chart 1: Status Doughnut -->
                     <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
                         <div class="flex justify-between items-center mb-4">
@@ -563,14 +563,28 @@
                         </div>
                     </div>
 
-                    <!-- Chart 2: Behavior / Topic Bar Chart -->
+                    <!-- Chart 2: Behavior / Topic Bar Chart (Full Width below Doughnut) -->
                     <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
                         <div class="flex justify-between items-center mb-4">
                             <h3 class="font-bold text-gray-800 text-base">จำนวนเรื่องร้องเรียนแยกตามพฤติกรรม / หัวข้อ</h3>
                             <span class="text-xs text-gray-400 bg-gray-100 px-2.5 py-1 rounded-md">Bar Chart</span>
                         </div>
-                        <div class="h-72">
+                        <div class="h-80">
                             <canvas id="topicChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Chart 3: Branch Case Count Horizontal Bar Chart (Supports 30-40 Branches) -->
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                        <div class="flex flex-wrap justify-between items-center gap-2 mb-4">
+                            <div>
+                                <h3 class="font-bold text-gray-800 text-base">จำนวนเรื่องร้องเรียนแยกตามสาขา (รองรับ 30–40 สาขา)</h3>
+                                <p class="text-xs text-gray-400 mt-0.5">แสดงจำนวนเคสทั้งหมดของแต่ละสาขาเซ็นทรัลในรูปแบบกราฟแท่งแนวนอน</p>
+                            </div>
+                            <span class="text-xs text-gray-400 bg-gray-100 px-2.5 py-1 rounded-md">Horizontal Bar Chart</span>
+                        </div>
+                        <div id="branchChartWrapper" class="w-full" style="height: 820px;">
+                            <canvas id="branchChart"></canvas>
                         </div>
                     </div>
                 </div>
@@ -736,10 +750,16 @@
                 
                 <!-- Section 1: Dropdown Configurations -->
                 <div>
-                    <h2 class="text-lg font-bold text-gray-900 mb-4 flex items-center space-x-2">
-                        <i class="fa-solid fa-sliders text-centralRed"></i>
-                        <span>ตั้งค่าตัวเลือกดรอปดาวน์ (Dropdown Configurations)</span>
-                    </h2>
+                    <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+                        <h2 class="text-lg font-bold text-gray-900 flex items-center space-x-2">
+                            <i class="fa-solid fa-sliders text-centralRed"></i>
+                            <span>ตั้งค่าตัวเลือกดรอปดาวน์ (Dropdown Configurations)</span>
+                        </h2>
+                        <button type="button" onclick="confirmResetCaseNumber()" class="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-xl text-xs font-semibold flex items-center space-x-2 shadow-sm transition">
+                            <i class="fa-solid fa-rotate-left"></i>
+                            <span>รีเซ็ตเลขรันเคสเป็น CDS0001</span>
+                        </button>
+                    </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         
                         <!-- Card A: Topics -->
@@ -1073,6 +1093,29 @@
             if (badge) badge.innerText = nextId;
             if (input) input.value = nextId;
         }
+
+        window.confirmResetCaseNumber = function() {
+            const modal = document.getElementById('confirm-modal');
+            document.getElementById('confirm-title').innerText = 'ยืนยันการรีเซ็ตเลขรัน ID : Case';
+            document.getElementById('confirm-text').innerText = 'ต้องการรีเซ็ตเลขรันเคสถัดไปให้กลับมาเริ่มต้นที่ CDS0001 ใช่หรือไม่? (แนะนำให้ใช้เมื่อต้องการล้างข้อมูลทดสอบและเริ่มนับใหม่)';
+            const okBtn = document.getElementById('confirm-ok-btn');
+            const cancelBtn = document.getElementById('confirm-cancel-btn');
+            okBtn.innerText = 'ยืนยันรีเซ็ตเป็น 0001';
+            modal.classList.remove('hidden');
+
+            cancelBtn.onclick = () => {
+                okBtn.innerText = 'ยืนยันการลบ';
+                modal.classList.add('hidden');
+            };
+            okBtn.onclick = async () => {
+                appState.nextCaseNum = 1;
+                await saveAppState();
+                okBtn.innerText = 'ยืนยันการลบ';
+                modal.classList.add('hidden');
+                updateNextCaseIdDisplay();
+                showToast('รีเซ็ตเลขรันเคสกลับเป็น CDS0001 เรียบร้อยแล้ว');
+            };
+        };
 
         // Save State to both LocalStorage and Firebase Realtime Database
         async function saveAppState() {
@@ -1792,6 +1835,7 @@
         // -------------------------------------------------------------------------
         let statusChartInstance = null;
         let topicChartInstance = null;
+        let branchChartInstance = null;
 
         window.updateDashboard = function() {
             const branchFilter = document.getElementById('dash-filter-branch').value;
@@ -1813,54 +1857,12 @@
 
             renderStatusChart(pending, closed);
             renderTopicChart(filtered);
+            renderBranchChart(filtered, branchFilter);
             renderBranchSummaryTable(filtered);
         };
 
         function renderStatusChart(pending, closed) {
-            const ctx = document.getElementById('statusChart').getContext('2d');
-            if (statusChartInstance) statusChartInstance.destroy();
-
-            statusChartInstance = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: ['เคสคงค้าง (Pending)', 'เคสที่ปิดแล้ว (Closed)'],
-                    datasets: [{
-                        data: [pending, closed],
-                        backgroundColor: ['#F59E0B', '#10B981'],
-                        borderWidth: 0,
-                        hoverOffset: 6
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { position: 'bottom', labels: { font: { family: 'Prompt', size: 12 } } }
-                    },
-                    cutout: '65%'
-                }
-            });
-        }
-
-        function renderTopicChart(filteredData) {
-            const ctx = document.getElementById('topicChart').getContext('2d');
-            if (topicChartInstance) topicChartInstance.destroy();
-
-            const topicCounts = {};
-            appState.topics.forEach(t => topicCounts[t] = 0);
-            filteredData.forEach(c => {
-                topicCounts[c.topic] = (topicCounts[c.topic] || 0) + 1;
-            });
-
-            // Format labels cleanly on multiple lines so they render straight without slanting
-            const formattedLabels = Object.keys(topicCounts).map(label => {
-                if (label.includes('(')) {
-                    const parts = label.split('(');
-                    return [parts[0].trim(), '(' + parts.slice(1).join('(')];
-                }
-                return label;
-            });
-
+// ... existing code ... -->
             topicChartInstance = new Chart(ctx, {
                 type: 'bar',
                 data: {
@@ -1870,7 +1872,7 @@
                         data: Object.values(topicCounts),
                         backgroundColor: '#E11D48',
                         borderRadius: 8,
-                        barThickness: 32
+                        barThickness: 42
                     }]
                 },
                 options: {
@@ -1884,8 +1886,71 @@
                                 maxRotation: 0,
                                 minRotation: 0,
                                 autoSkip: false,
-                                font: { family: 'Prompt', size: 11 }
+                                font: { family: 'Prompt', size: 12 }
                             }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderBranchChart(filteredData, branchFilter) {
+            const canvas = document.getElementById('branchChart');
+            const wrapper = document.getElementById('branchChartWrapper');
+            if (!canvas || !wrapper) return;
+            const ctx = canvas.getContext('2d');
+            if (branchChartInstance) branchChartInstance.destroy();
+
+            const targetBranches = branchFilter === 'ALL' ? appState.branches : [branchFilter];
+            const branchCounts = {};
+            targetBranches.forEach(b => branchCounts[b] = 0);
+            filteredData.forEach(c => {
+                branchCounts[c.branch] = (branchCounts[c.branch] || 0) + 1;
+            });
+
+            const labels = Object.keys(branchCounts);
+            const dataValues = Object.values(branchCounts);
+
+            // Dynamically adjust height so 30-40 branches remain spacious and readable
+            const dynamicHeight = Math.max(240, labels.length * 26 + 60);
+            wrapper.style.height = `${dynamicHeight}px`;
+
+            branchChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'จำนวนเรื่องร้องเรียน (เคส)',
+                        data: dataValues,
+                        backgroundColor: '#0F172A',
+                        hoverBackgroundColor: '#E11D48',
+                        borderRadius: 6,
+                        barThickness: 16
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            titleFont: { family: 'Prompt' },
+                            bodyFont: { family: 'Prompt' }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            ticks: { stepSize: 1, font: { family: 'Prompt', size: 11 } },
+                            grid: { color: '#F1F5F9' }
+                        },
+                        y: {
+                            ticks: {
+                                autoSkip: false,
+                                font: { family: 'Prompt', size: 11 }
+                            },
+                            grid: { display: false }
                         }
                     }
                 }
