@@ -1862,7 +1862,53 @@
         };
 
         function renderStatusChart(pending, closed) {
-// ... existing code ... -->
+            const canvas = document.getElementById('statusChart');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            if (statusChartInstance) statusChartInstance.destroy();
+
+            statusChartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['เคสคงค้าง (Pending)', 'เคสที่ปิดแล้ว (Closed)'],
+                    datasets: [{
+                        data: [pending, closed],
+                        backgroundColor: ['#F59E0B', '#10B981'],
+                        borderWidth: 0,
+                        hoverOffset: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '65%',
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { padding: 20, font: { family: 'Prompt', size: 12 } }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderTopicChart(filteredData) {
+            const canvas = document.getElementById('topicChart');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            if (topicChartInstance) topicChartInstance.destroy();
+
+            const topicCounts = {};
+            appState.topics.forEach(t => topicCounts[t] = 0);
+            filteredData.forEach(c => {
+                topicCounts[c.topic] = (topicCounts[c.topic] || 0) + 1;
+            });
+
+            const formattedLabels = Object.keys(topicCounts).map(label => {
+                const match = label.match(/^(.+?)\s*\((.+?)\)$/);
+                return match ? [match[1], `(${match[2]})`] : label;
+            });
+
             topicChartInstance = new Chart(ctx, {
                 type: 'bar',
                 data: {
