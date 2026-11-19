@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CDS Whistleblower & Complaint Management System</title>
+    <link rel="icon" type="image/png" href="icon.png">
+    <link rel="apple-touch-icon" href="icon.png">
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Font Awesome Icons -->
@@ -70,19 +72,19 @@
                 <p class="text-sm text-gray-500 mt-1">Central Department Store - Complaint Management</p>
             </div>
             
-            <form id="login-form" class="space-y-4">
+            <form id="login-form" autocomplete="off" class="space-y-4">
                 <div>
                     <label class="block text-xs font-semibold uppercase text-gray-600 mb-1">ชื่อผู้ใช้งาน (Username)</label>
                     <div class="relative">
                         <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400"><i class="fa-solid fa-user"></i></span>
-                        <input type="text" id="login-username" required class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-centralRed focus:outline-none text-sm" placeholder="กรอกชื่อผู้ใช้งาน">
+                        <input type="text" id="login-username" name="cds_user_no_autofill" autocomplete="off" readonly onfocus="this.removeAttribute('readonly');" required class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-centralRed focus:outline-none text-sm" placeholder="กรอกชื่อผู้ใช้งาน">
                     </div>
                 </div>
                 <div>
                     <label class="block text-xs font-semibold uppercase text-gray-600 mb-1">รหัสผ่าน (Password)</label>
                     <div class="relative">
                         <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400"><i class="fa-solid fa-lock"></i></span>
-                        <input type="password" id="login-password" required class="w-full pl-10 pr-10 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-centralRed focus:outline-none text-sm" placeholder="กรอกรหัสผ่าน">
+                        <input type="password" id="login-password" name="cds_pass_no_autofill" autocomplete="new-password" readonly onfocus="this.removeAttribute('readonly');" required class="w-full pl-10 pr-10 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-centralRed focus:outline-none text-sm" placeholder="กรอกรหัสผ่าน">
                         <button type="button" onclick="toggleLoginPassword()" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none">
                             <i id="login-eye-icon" class="fa-solid fa-eye text-sm"></i>
                         </button>
@@ -190,8 +192,11 @@
                         <div id="detail-description" class="text-sm text-gray-700 leading-relaxed bg-white p-4 rounded-xl border border-gray-200 min-h-[120px] whitespace-pre-wrap">-</div>
                     </div>
                     <!-- Resolution Details Section (Displayed when available) -->
-                    <div id="detail-resolution-box" class="hidden">
-                        <h4 class="text-xs font-bold uppercase tracking-wider text-emerald-700 mb-1">รายละเอียดการดำเนินการแก้ไข (Resolution Details)</h4>
+                    <div id="detail-resolution-box" class="hidden space-y-2">
+                        <div class="flex flex-wrap items-center justify-between gap-2">
+                            <h4 class="text-xs font-bold uppercase tracking-wider text-emerald-700">รายละเอียดการดำเนินการแก้ไข (Resolution Details)</h4>
+                            <span id="detail-completed-date-badge" class="hidden text-xs font-semibold text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded-full"></span>
+                        </div>
                         <div id="detail-resolution" class="text-sm text-emerald-950 leading-relaxed bg-emerald-50/60 p-4 rounded-xl border border-emerald-200 whitespace-pre-wrap">-</div>
                     </div>
                 </div>
@@ -284,22 +289,30 @@
                 </div>
 
                 <!-- Conditional Resolution Details Box (Shown when Status is 'ดำเนินการเรียบร้อย') -->
-                <div id="edit-resolution-wrapper" class="hidden bg-emerald-50 border border-emerald-200 p-4 rounded-xl space-y-1.5">
-                    <label class="block text-xs font-bold text-emerald-800">
-                        <i class="fa-solid fa-circle-check mr-1"></i>รายละเอียดการดำเนินการแก้ไข (กรุณากรอกรายละเอียดก่อนบันทึกปิดเคส) *
-                    </label>
-                    <textarea id="edit-resolution" rows="3" class="w-full p-3 border border-emerald-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-600 focus:outline-none bg-white" placeholder="ระบุผลการตรวจสอบ แนวทางการแก้ไข หรือผลการดำเนินการปิดเคส..."></textarea>
+                <div id="edit-resolution-wrapper" class="hidden bg-emerald-50 border border-emerald-200 p-4 rounded-xl space-y-3">
+                    <div>
+                        <label class="block text-xs font-bold text-emerald-800 mb-1">
+                            <i class="fa-solid fa-calendar-check mr-1"></i>วันที่ดำเนินการเรียบร้อย (Completed Date) *
+                        </label>
+                        <input type="date" id="edit-completed-date" class="w-full sm:w-64 h-[40px] px-3.5 py-1.5 border border-emerald-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-600 focus:outline-none bg-white">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-emerald-800 mb-1">
+                            <i class="fa-solid fa-circle-check mr-1"></i>รายละเอียดการดำเนินการแก้ไข (กรุณากรอกรายละเอียดก่อนบันทึกปิดเคส) *
+                        </label>
+                        <textarea id="edit-resolution" rows="3" class="w-full p-3 border border-emerald-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-600 focus:outline-none bg-white" placeholder="ระบุผลการตรวจสอบ แนวทางการแก้ไข หรือผลการดำเนินการปิดเคส..."></textarea>
+                    </div>
                 </div>
 
-                <div class="bg-blue-50 border border-blue-100 rounded-xl p-3 text-xs text-blue-800 flex items-center space-x-2">
-                    <i class="fa-solid fa-user-pen text-blue-600"></i>
-                    <span>ระบบจะบันทึกชื่อผู้แก้ไข (<strong id="edit-editor-preview">-</strong>) พร้อมวันและเวลาปัจจุบันโดยอัตโนมัติ</span>
+                <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs text-slate-600 flex items-center justify-between">
+                    <span><i class="fa-solid fa-user-pen text-slate-400 mr-1.5"></i>ผู้บันทึกการแก้ไขครั้งนี้: <strong id="edit-editor-preview" class="text-slate-900">-</strong></span>
+                    <span class="text-slate-400">บันทึกวันและเวลาอัตโนมัติ</span>
                 </div>
 
-                <div class="pt-2 flex justify-end space-x-3 border-t border-gray-100">
+                <div class="pt-3 border-t border-gray-100 flex justify-end space-x-3">
                     <button type="button" onclick="closeEditComplaintModal()" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-sm font-medium">ยกเลิก</button>
                     <button type="submit" class="px-6 py-2 bg-centralRed hover:bg-centralDarkRed text-white rounded-xl text-sm font-semibold shadow-md flex items-center space-x-2">
-                        <i class="fa-solid fa-floppy-disk"></i>
+                        <i class="fa-solid fa-check"></i>
                         <span>บันทึกการแก้ไข</span>
                     </button>
                 </div>
@@ -313,16 +326,16 @@
             <div class="bg-centralNavy text-white px-6 py-4 flex justify-between items-center">
                 <div class="flex items-center space-x-2">
                     <i class="fa-solid fa-user-pen text-amber-400"></i>
-                    <h3 class="font-bold text-base">แก้ไขข้อมูลผู้ใช้งาน / รหัสผ่าน / สิทธิ์</h3>
+                    <h3 class="font-bold text-base">แก้ไขข้อมูลผู้ใช้งาน / รหัสผ่าน</h3>
                 </div>
-                <button onclick="closeEditUserModal()" class="text-gray-400 hover:text-white">
+                <button onclick="closeEditUserModal()" class="text-gray-400 hover:text-white p-1">
                     <i class="fa-solid fa-xmark text-lg"></i>
                 </button>
             </div>
-            <form id="edit-user-form" class="p-6 space-y-3.5">
+            <form id="edit-user-form" class="p-6 space-y-4">
                 <input type="hidden" id="edit-user-id">
                 <div>
-                    <label class="block text-xs font-semibold text-gray-600 mb-1">ชื่อ - นามสกุล *</label>
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">ชื่อ - นามสกุล (Full Name) *</label>
                     <input type="text" id="edit-user-fullname" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
                 </div>
                 <div>
@@ -336,7 +349,7 @@
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-gray-600 mb-1">รหัสผ่านใหม่ (Password) *</label>
-                        <input type="text" id="edit-user-password" required class="w-full px-3 py-2 border border-amber-400 bg-amber-50/40 rounded-lg text-sm font-mono">
+                        <input type="text" id="edit-user-password" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono">
                     </div>
                 </div>
                 <div>
@@ -396,20 +409,28 @@
     </div>
 
     <!-- MAIN APPLICATION LAYOUT -->
-    <div id="app-container" class="flex h-screen overflow-hidden hidden">
+    <div id="app-container" class="flex h-screen overflow-hidden hidden relative">
         
+        <!-- MOBILE SIDEBAR BACKDROP -->
+        <div id="sidebar-backdrop" onclick="toggleMobileSidebar()" class="fixed inset-0 bg-gray-900/60 z-20 hidden lg:hidden"></div>
+
         <!-- SIDEBAR NAVIGATION -->
-        <aside class="w-64 bg-centralNavy text-white flex flex-col justify-between flex-shrink-0 transition-all duration-300 z-20">
+        <aside id="app-sidebar" class="fixed inset-y-0 left-0 transform -translate-x-full lg:relative lg:translate-x-0 w-64 bg-centralNavy text-white flex flex-col justify-between flex-shrink-0 transition-transform duration-300 ease-in-out z-30">
             <div>
                 <!-- Brand Logo -->
-                <div class="p-6 border-b border-slate-800 flex items-center space-x-3">
-                    <div class="w-10 h-10 rounded-xl bg-centralRed flex items-center justify-center text-white font-bold text-xl shadow-lg">
-                        <i class="fa-solid fa-shield-halved"></i>
+                <div class="p-6 border-b border-slate-800 flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 rounded-xl bg-centralRed flex items-center justify-center text-white font-bold text-xl shadow-lg">
+                            <i class="fa-solid fa-shield-halved"></i>
+                        </div>
+                        <div>
+                            <span class="font-bold text-base tracking-wide block leading-tight">CDS Whistleblower</span>
+                            <span class="text-[11px] text-slate-400 block">Central Complaint System</span>
+                        </div>
                     </div>
-                    <div>
-                        <span class="font-bold text-base tracking-wide block leading-tight">CDS Whistleblower</span>
-                        <span class="text-[11px] text-slate-400 block">Central Complaint System</span>
-                    </div>
+                    <button onclick="toggleMobileSidebar()" class="lg:hidden text-slate-400 hover:text-white p-1">
+                        <i class="fa-solid fa-xmark text-lg"></i>
+                    </button>
                 </div>
 
                 <!-- Navigation Menu (Reordered per Requirement 1) -->
@@ -453,27 +474,31 @@
         <div class="flex-1 flex flex-col min-w-0 overflow-y-auto">
             
             <!-- TOP NAVBAR -->
-            <header class="h-16 shrink-0 bg-white border-b border-gray-200 flex items-center justify-between px-8 shadow-sm">
-                <div class="flex items-center space-x-4">
-                    <h1 id="page-title" class="text-xl font-bold text-gray-800">บันทึกข้อมูลข้อร้องเรียนใหม่</h1>
+            <header class="h-16 shrink-0 bg-white border-b border-gray-200 flex items-center justify-between px-4 sm:px-8 shadow-sm">
+                <div class="flex items-center space-x-3 sm:space-x-4 min-w-0">
+                    <button onclick="toggleMobileSidebar()" class="lg:hidden p-2 rounded-lg text-gray-600 hover:bg-gray-100 focus:outline-none" aria-label="เปิดเมนู">
+                        <i class="fa-solid fa-bars text-lg"></i>
+                    </button>
+                    <h1 id="page-title" class="text-base sm:text-xl font-bold text-gray-800 truncate">บันทึกข้อมูลข้อร้องเรียนใหม่</h1>
                 </div>
-                <div class="flex items-center space-x-4">
+                <div class="flex items-center space-x-4 shrink-0">
                     <div class="text-xs text-gray-500 font-medium hidden sm:block" id="current-date-display"></div>
                 </div>
             </header>
 
             <!-- VIEW 1: DASHBOARD -->
-            <main id="view-dashboard" class="hidden p-8 space-y-6 max-w-7xl mx-auto w-full">
-                <!-- Filter & Export Bar -->
-                <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-wrap items-end justify-between gap-4">
-                    <div class="flex flex-wrap items-center gap-4 flex-1">
-                        <div class="min-w-[220px]">
+            <main id="view-dashboard" class="hidden p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto w-full">
+                
+                <!-- Dashboard Filter & Export Bar -->
+                <div class="bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-wrap items-center justify-between gap-4">
+                    <div class="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+                        <div class="min-w-[220px] flex-1 sm:flex-initial">
                             <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">กรองตามสาขาเซ็นทรัล (32 สาขา)</label>
                             <select id="dash-filter-branch" onchange="updateDashboard()" class="w-full border border-gray-300 rounded-xl px-3.5 py-2 text-sm focus:ring-2 focus:ring-centralRed focus:outline-none bg-gray-50">
                                 <option value="ALL">ทุกสาขา (All 32 Branches)</option>
                             </select>
                         </div>
-                        <div class="min-w-[200px]">
+                        <div class="min-w-[200px] flex-1 sm:flex-initial">
                             <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">กรองตามพฤติกรรม / หัวข้อ</label>
                             <select id="dash-filter-topic" onchange="updateDashboard()" class="w-full border border-gray-300 rounded-xl px-3.5 py-2 text-sm focus:ring-2 focus:ring-centralRed focus:outline-none bg-gray-50">
                                 <option value="ALL">ทุกหัวข้อ (All Topics)</option>
@@ -569,8 +594,8 @@
             </main>
 
             <!-- VIEW 2: NEW COMPLAINT FORM (Default Initial View) -->
-            <main id="view-form" class="p-8 max-w-4xl mx-auto w-full">
-                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+            <main id="view-form" class="p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto w-full">
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 sm:p-8">
                     <div class="border-b border-gray-100 pb-5 mb-6 flex flex-wrap justify-between items-center gap-4">
                         <div>
                             <h2 class="text-lg font-bold text-gray-900 flex items-center space-x-2">
@@ -657,8 +682,8 @@
             </main>
 
             <!-- VIEW 3: COMPLAINTS LIST -->
-            <main id="view-complaints" class="hidden p-8 max-w-7xl mx-auto w-full space-y-6">
-                <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+            <main id="view-complaints" class="hidden p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full space-y-6">
+                <div class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-100">
                     <div class="flex flex-wrap justify-between items-center gap-4 mb-6">
                         <div>
                             <h2 class="text-lg font-bold text-gray-900 flex items-center space-x-2">
@@ -706,7 +731,7 @@
             </main>
 
             <!-- VIEW 4: SYSTEM SETTINGS & USER MANAGEMENT -->
-            <main id="view-settings" class="hidden p-8 max-w-7xl mx-auto w-full space-y-8">
+            <main id="view-settings" class="hidden p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full space-y-8">
                 
                 <!-- Section 1: Dropdown Configurations -->
                 <div>
@@ -714,24 +739,24 @@
                         <i class="fa-solid fa-sliders text-centralRed"></i>
                         <span>ตั้งค่าตัวเลือกดรอปดาวน์ (Dropdown Configurations)</span>
                     </h2>
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         
                         <!-- Card A: Topics -->
-                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col">
+                        <div class="bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col min-w-0">
                             <h3 class="font-bold text-gray-800 text-sm mb-3 flex items-center space-x-2">
                                 <i class="fa-solid fa-tags text-centralRed"></i>
                                 <span>หัวข้อข้อร้องเรียน (Topics)</span>
                             </h3>
-                            <div class="flex space-x-2 mb-4">
-                                <input type="text" id="new-topic-input" placeholder="เพิ่มหัวข้อใหม่..." class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-xs focus:ring-2 focus:ring-centralRed focus:outline-none">
-                                <button onclick="addDropdownItem('topics', 'new-topic-input')" class="bg-centralRed hover:bg-centralDarkRed text-white px-3 py-2 rounded-lg text-xs font-semibold whitespace-nowrap">+ เพิ่ม</button>
+                            <div class="flex items-center gap-2 mb-4">
+                                <input type="text" id="new-topic-input" placeholder="เพิ่มหัวข้อใหม่..." class="flex-1 min-w-0 px-3 py-2 border border-gray-300 rounded-lg text-xs focus:ring-2 focus:ring-centralRed focus:outline-none">
+                                <button onclick="addDropdownItem('topics', 'new-topic-input')" class="bg-centralRed hover:bg-centralDarkRed text-white px-3.5 py-2 rounded-lg text-xs font-semibold shrink-0 whitespace-nowrap">+ เพิ่ม</button>
                             </div>
-                            <div class="border border-gray-200 rounded-xl overflow-hidden flex-1">
+                            <div class="border border-gray-200 rounded-xl overflow-x-auto flex-1">
                                 <table class="w-full text-left border-collapse">
                                     <thead>
                                         <tr class="bg-gray-50 border-b border-gray-200 text-[11px] font-semibold text-gray-500 uppercase">
-                                            <th class="py-2 px-3">รายการหัวข้อ</th>
-                                            <th class="py-2 px-3 text-right w-20">จัดการ</th>
+                                            <th class="py-2.5 px-3">รายการหัวข้อ</th>
+                                            <th class="py-2.5 px-3 text-right w-24 shrink-0">จัดการ</th>
                                         </tr>
                                     </thead>
                                     <tbody id="settings-topics-list" class="divide-y divide-gray-100 text-xs"></tbody>
@@ -740,21 +765,21 @@
                         </div>
 
                         <!-- Card B: Statuses -->
-                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col">
+                        <div class="bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col min-w-0">
                             <h3 class="font-bold text-gray-800 text-sm mb-3 flex items-center space-x-2">
                                 <i class="fa-solid fa-spinner text-amber-500"></i>
                                 <span>สถานะการดำเนินการ (Statuses)</span>
                             </h3>
-                            <div class="flex space-x-2 mb-4">
-                                <input type="text" id="new-status-input" placeholder="เพิ่มสถานะใหม่..." class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-xs focus:ring-2 focus:ring-centralRed focus:outline-none">
-                                <button onclick="addDropdownItem('statuses', 'new-status-input')" class="bg-centralRed hover:bg-centralDarkRed text-white px-3 py-2 rounded-lg text-xs font-semibold whitespace-nowrap">+ เพิ่ม</button>
+                            <div class="flex items-center gap-2 mb-4">
+                                <input type="text" id="new-status-input" placeholder="เพิ่มสถานะใหม่..." class="flex-1 min-w-0 px-3 py-2 border border-gray-300 rounded-lg text-xs focus:ring-2 focus:ring-centralRed focus:outline-none">
+                                <button onclick="addDropdownItem('statuses', 'new-status-input')" class="bg-centralRed hover:bg-centralDarkRed text-white px-3.5 py-2 rounded-lg text-xs font-semibold shrink-0 whitespace-nowrap">+ เพิ่ม</button>
                             </div>
-                            <div class="border border-gray-200 rounded-xl overflow-hidden flex-1">
+                            <div class="border border-gray-200 rounded-xl overflow-x-auto flex-1">
                                 <table class="w-full text-left border-collapse">
                                     <thead>
                                         <tr class="bg-gray-50 border-b border-gray-200 text-[11px] font-semibold text-gray-500 uppercase">
-                                            <th class="py-2 px-3">รายการสถานะ</th>
-                                            <th class="py-2 px-3 text-right w-20">จัดการ</th>
+                                            <th class="py-2.5 px-3">รายการสถานะ</th>
+                                            <th class="py-2.5 px-3 text-right w-24 shrink-0">จัดการ</th>
                                         </tr>
                                     </thead>
                                     <tbody id="settings-statuses-list" class="divide-y divide-gray-100 text-xs"></tbody>
@@ -763,21 +788,21 @@
                         </div>
 
                         <!-- Card C: Assignees -->
-                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col">
+                        <div class="bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col min-w-0">
                             <h3 class="font-bold text-gray-800 text-sm mb-3 flex items-center space-x-2">
                                 <i class="fa-solid fa-user-tie text-blue-600"></i>
                                 <span>ผู้รับผิดชอบดำเนินการ (Assignees)</span>
                             </h3>
-                            <div class="flex space-x-2 mb-4">
-                                <input type="text" id="new-assignee-input" placeholder="เพิ่มชื่อผู้รับผิดชอบ..." class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-xs focus:ring-2 focus:ring-centralRed focus:outline-none">
-                                <button onclick="addDropdownItem('assignees', 'new-assignee-input')" class="bg-centralRed hover:bg-centralDarkRed text-white px-3 py-2 rounded-lg text-xs font-semibold whitespace-nowrap">+ เพิ่ม</button>
+                            <div class="flex items-center gap-2 mb-4">
+                                <input type="text" id="new-assignee-input" placeholder="เพิ่มชื่อผู้รับผิดชอบ..." class="flex-1 min-w-0 px-3 py-2 border border-gray-300 rounded-lg text-xs focus:ring-2 focus:ring-centralRed focus:outline-none">
+                                <button onclick="addDropdownItem('assignees', 'new-assignee-input')" class="bg-centralRed hover:bg-centralDarkRed text-white px-3.5 py-2 rounded-lg text-xs font-semibold shrink-0 whitespace-nowrap">+ เพิ่ม</button>
                             </div>
-                            <div class="border border-gray-200 rounded-xl overflow-hidden flex-1">
+                            <div class="border border-gray-200 rounded-xl overflow-x-auto flex-1">
                                 <table class="w-full text-left border-collapse">
                                     <thead>
                                         <tr class="bg-gray-50 border-b border-gray-200 text-[11px] font-semibold text-gray-500 uppercase">
-                                            <th class="py-2 px-3">รายชื่อผู้รับผิดชอบ</th>
-                                            <th class="py-2 px-3 text-right w-20">จัดการ</th>
+                                            <th class="py-2.5 px-3">รายชื่อผู้รับผิดชอบ</th>
+                                            <th class="py-2.5 px-3 text-right w-24 shrink-0">จัดการ</th>
                                         </tr>
                                     </thead>
                                     <tbody id="settings-assignees-list" class="divide-y divide-gray-100 text-xs"></tbody>
@@ -786,21 +811,21 @@
                         </div>
 
                         <!-- Card D: Branches -->
-                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col">
+                        <div class="bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col min-w-0">
                             <h3 class="font-bold text-gray-800 text-sm mb-3 flex items-center space-x-2">
                                 <i class="fa-solid fa-store text-emerald-600"></i>
                                 <span>สาขาเซ็นทรัล (Branches)</span>
                             </h3>
-                            <div class="flex space-x-2 mb-4">
-                                <input type="text" id="new-branch-input" placeholder="เพิ่มสาขาใหม่..." class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-xs focus:ring-2 focus:ring-centralRed focus:outline-none">
-                                <button onclick="addDropdownItem('branches', 'new-branch-input')" class="bg-centralRed hover:bg-centralDarkRed text-white px-3 py-2 rounded-lg text-xs font-semibold whitespace-nowrap">+ เพิ่ม</button>
+                            <div class="flex items-center gap-2 mb-4">
+                                <input type="text" id="new-branch-input" placeholder="เพิ่มสาขาใหม่..." class="flex-1 min-w-0 px-3 py-2 border border-gray-300 rounded-lg text-xs focus:ring-2 focus:ring-centralRed focus:outline-none">
+                                <button onclick="addDropdownItem('branches', 'new-branch-input')" class="bg-centralRed hover:bg-centralDarkRed text-white px-3.5 py-2 rounded-lg text-xs font-semibold shrink-0 whitespace-nowrap">+ เพิ่ม</button>
                             </div>
-                            <div class="border border-gray-200 rounded-xl overflow-hidden flex-1 max-h-[320px] overflow-y-auto">
+                            <div class="border border-gray-200 rounded-xl overflow-x-auto flex-1 max-h-[320px] overflow-y-auto">
                                 <table class="w-full text-left border-collapse">
                                     <thead>
                                         <tr class="bg-gray-50 border-b border-gray-200 text-[11px] font-semibold text-gray-500 uppercase sticky top-0">
-                                            <th class="py-2 px-3">รายชื่อสาขา</th>
-                                            <th class="py-2 px-3 text-right w-20">จัดการ</th>
+                                            <th class="py-2.5 px-3">รายชื่อสาขา</th>
+                                            <th class="py-2.5 px-3 text-right w-24 shrink-0">จัดการ</th>
                                         </tr>
                                     </thead>
                                     <tbody id="settings-branches-list" class="divide-y divide-gray-100 text-xs"></tbody>
@@ -983,6 +1008,12 @@
         // 2. INITIALIZATION & STORAGE SYNC
         // -------------------------------------------------------------------------
         window.onload = async function() {
+            // Ensure login fields always start completely blank (no browser saved credentials)
+            const loginUserField = document.getElementById('login-username');
+            const loginPassField = document.getElementById('login-password');
+            if (loginUserField) loginUserField.value = '';
+            if (loginPassField) loginPassField.value = '';
+
             // Display Current Date
             const now = new Date();
             const dateDisplay = document.getElementById('current-date-display');
@@ -1162,11 +1193,29 @@
             document.getElementById('app-container').classList.add('hidden');
             document.getElementById('login-modal').classList.remove('hidden');
             document.getElementById('login-form').reset();
+            const loginUserField = document.getElementById('login-username');
+            const loginPassField = document.getElementById('login-password');
+            if (loginUserField) { loginUserField.value = ''; loginUserField.setAttribute('readonly', 'readonly'); }
+            if (loginPassField) { loginPassField.value = ''; loginPassField.setAttribute('readonly', 'readonly'); }
         };
 
         // -------------------------------------------------------------------------
         // 4. NAVIGATION & UI HELPERS
         // -------------------------------------------------------------------------
+        window.toggleMobileSidebar = function() {
+            const sidebar = document.getElementById('app-sidebar');
+            const backdrop = document.getElementById('sidebar-backdrop');
+            if (!sidebar || !backdrop) return;
+            const isClosed = sidebar.classList.contains('-translate-x-full');
+            if (isClosed) {
+                sidebar.classList.remove('-translate-x-full');
+                backdrop.classList.remove('hidden');
+            } else {
+                sidebar.classList.add('-translate-x-full');
+                backdrop.classList.add('hidden');
+            }
+        };
+
         window.switchTab = function(tabName) {
             const views = ['dashboard', 'form', 'complaints', 'settings'];
             const titles = {
@@ -1176,12 +1225,20 @@
                 'settings': 'ตั้งค่าระบบและผู้ใช้งาน'
             };
 
+            // Auto-close mobile drawer on navigation
+            const sidebar = document.getElementById('app-sidebar');
+            const backdrop = document.getElementById('sidebar-backdrop');
+            if (sidebar && !sidebar.classList.contains('-translate-x-full') && window.innerWidth < 1024) {
+                sidebar.classList.add('-translate-x-full');
+                if (backdrop) backdrop.classList.add('hidden');
+            }
+
             views.forEach(v => {
                 document.getElementById(`view-${v}`).classList.add('hidden');
-                const navBtn = document.getElementById(`nav-${v}`);
-                if (navBtn) {
-                    navBtn.classList.remove('bg-centralRed', 'text-white');
-                    navBtn.classList.add('text-slate-300', 'hover:bg-slate-800');
+                const btn = document.getElementById(`nav-${v}`);
+                if (btn) {
+                    btn.classList.remove('bg-centralRed', 'text-white');
+                    btn.classList.add('text-slate-300', 'hover:bg-slate-800');
                 }
             });
 
@@ -1311,6 +1368,7 @@
                 status: document.getElementById('form-status').value,
                 assignee: document.getElementById('form-assignee').value,
                 description: document.getElementById('form-description').value.trim(),
+                completedDate: '',
                 resolutionDetails: '',
                 createdBy: appState.currentUser ? (appState.currentUser.fullName || appState.currentUser.username) : 'System',
                 lastEditedBy: '',
@@ -1426,6 +1484,7 @@
             document.getElementById('edit-status').value = c.status;
             document.getElementById('edit-assignee').value = c.assignee;
             document.getElementById('edit-description').value = c.description;
+            document.getElementById('edit-completed-date').value = c.completedDate || '';
             document.getElementById('edit-resolution').value = c.resolutionDetails || '';
 
             toggleResolutionField();
@@ -1439,12 +1498,22 @@
         window.toggleResolutionField = function() {
             const statusVal = document.getElementById('edit-status').value;
             const wrapper = document.getElementById('edit-resolution-wrapper');
+            const dateInput = document.getElementById('edit-completed-date');
             const textarea = document.getElementById('edit-resolution');
             if (statusVal && (statusVal.includes('เรียบร้อย') || statusVal.toLowerCase().includes('closed') || statusVal.toLowerCase().includes('done'))) {
                 wrapper.classList.remove('hidden');
+                dateInput.setAttribute('required', 'required');
                 textarea.setAttribute('required', 'required');
+                if (!dateInput.value) {
+                    const now = new Date();
+                    const yyyy = now.getFullYear();
+                    const mm = String(now.getMonth() + 1).padStart(2, '0');
+                    const dd = String(now.getDate()).padStart(2, '0');
+                    dateInput.value = `${yyyy}-${mm}-${dd}`;
+                }
             } else {
                 wrapper.classList.add('hidden');
+                dateInput.removeAttribute('required');
                 textarea.removeAttribute('required');
             }
         };
@@ -1467,6 +1536,8 @@
             const rDate = document.getElementById('edit-received-date').value;
             const rTime = document.getElementById('edit-received-time').value;
             const updatedStatus = document.getElementById('edit-status').value;
+            const isCompleted = updatedStatus && (updatedStatus.includes('เรียบร้อย') || updatedStatus.toLowerCase().includes('closed') || updatedStatus.toLowerCase().includes('done'));
+            const completedDateVal = isCompleted ? document.getElementById('edit-completed-date').value : '';
             const resolutionText = document.getElementById('edit-resolution').value.trim();
 
             appState.complaints[idx] = {
@@ -1480,6 +1551,7 @@
                 status: updatedStatus,
                 assignee: document.getElementById('edit-assignee').value,
                 description: document.getElementById('edit-description').value.trim(),
+                completedDate: completedDateVal,
                 resolutionDetails: resolutionText,
                 lastEditedBy: editorName,
                 lastEditedAt: `วันที่ ${editDateStr} เวลา ${editTimeStr} น.`
@@ -1508,10 +1580,18 @@
 
             const resBox = document.getElementById('detail-resolution-box');
             const resText = document.getElementById('detail-resolution');
-            if (c.resolutionDetails && c.resolutionDetails.trim() !== '') {
-                resText.innerText = c.resolutionDetails;
+            const compDateBadge = document.getElementById('detail-completed-date-badge');
+            if ((c.resolutionDetails && c.resolutionDetails.trim() !== '') || (c.completedDate && c.completedDate.trim() !== '')) {
+                resText.innerText = c.resolutionDetails || '-';
+                if (c.completedDate && c.completedDate.trim() !== '') {
+                    compDateBadge.innerText = `วันที่ดำเนินการเรียบร้อย: ${c.completedDate}`;
+                    compDateBadge.classList.remove('hidden');
+                } else {
+                    compDateBadge.classList.add('hidden');
+                }
                 resBox.classList.remove('hidden');
             } else {
+                compDateBadge.classList.add('hidden');
                 resBox.classList.add('hidden');
             }
 
@@ -1636,6 +1716,7 @@
                     { v: "สาขาเซ็นทรัล", s: headerStyle },
                     { v: "หัวข้อ / พฤติกรรม", s: headerStyle },
                     { v: "รายละเอียดข้อร้องเรียน", s: headerStyle },
+                    { v: "วันที่ดำเนินการเรียบร้อย", s: headerStyle },
                     { v: "รายละเอียดการดำเนินการแก้ไข", s: headerStyle },
                     { v: "ผู้รับผิดชอบดำเนินการ", s: headerStyle },
                     { v: "สถานะการดำเนินการ", s: headerStyle },
@@ -1678,6 +1759,7 @@
                     { v: c.branch, s: cellStyle("left") },
                     { v: c.topic, s: cellStyle("left") },
                     { v: c.description, s: cellStyle("left") },
+                    { v: c.completedDate || '-', s: cellStyle("center") },
                     { v: c.resolutionDetails || '-', s: cellStyle("left") },
                     { v: c.assignee, s: cellStyle("left") },
                     { v: c.status, s: cellStyle("center", true, statusColor, statusBg) },
@@ -1688,12 +1770,12 @@
 
             const ws = XLSX.utils.aoa_to_sheet(wsData);
             ws['!merges'] = [
-                { s: { r: 0, c: 0 }, e: { r: 0, c: 11 } },
-                { s: { r: 1, c: 0 }, e: { r: 1, c: 11 } }
+                { s: { r: 0, c: 0 }, e: { r: 0, c: 12 } },
+                { s: { r: 1, c: 0 }, e: { r: 1, c: 12 } }
             ];
             ws['!cols'] = [
                 { wch: 14 }, { wch: 16 }, { wch: 14 }, { wch: 32 },
-                { wch: 28 }, { wch: 26 }, { wch: 45 }, { wch: 40 },
+                { wch: 28 }, { wch: 26 }, { wch: 45 }, { wch: 20 }, { wch: 40 },
                 { wch: 26 }, { wch: 22 }, { wch: 20 }, { wch: 32 }
             ];
             ws['!rows'] = [{ hpt: 32 }, { hpt: 22 }, { hpt: 10 }, { hpt: 28 }];
@@ -1769,10 +1851,19 @@
                 topicCounts[c.topic] = (topicCounts[c.topic] || 0) + 1;
             });
 
+            // Format labels cleanly on multiple lines so they render straight without slanting
+            const formattedLabels = Object.keys(topicCounts).map(label => {
+                if (label.includes('(')) {
+                    const parts = label.split('(');
+                    return [parts[0].trim(), '(' + parts.slice(1).join('(')];
+                }
+                return label;
+            });
+
             topicChartInstance = new Chart(ctx, {
                 type: 'bar',
                 data: {
-                    labels: Object.keys(topicCounts),
+                    labels: formattedLabels,
                     datasets: [{
                         label: 'จำนวนเรื่องร้องเรียน (เคส)',
                         data: Object.values(topicCounts),
@@ -1787,7 +1878,14 @@
                     plugins: { legend: { display: false } },
                     scales: {
                         y: { beginAtZero: true, ticks: { stepSize: 1, font: { family: 'Prompt' } } },
-                        x: { ticks: { font: { family: 'Prompt', size: 11 } } }
+                        x: {
+                            ticks: {
+                                maxRotation: 0,
+                                minRotation: 0,
+                                autoSkip: false,
+                                font: { family: 'Prompt', size: 11 }
+                            }
+                        }
                     }
                 }
             });
