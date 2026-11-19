@@ -4,8 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CDS Whistleblower & Complaint Management System</title>
-    <link rel="icon" type="image/png" href="icon.png">
-    <link rel="apple-touch-icon" href="icon.png">
+    <link rel="icon" type="image/png" href="./icon.png?v=1">
+    <link rel="shortcut icon" type="image/png" href="./icon.png?v=1">
+    <link rel="apple-touch-icon" href="./icon.png?v=1">
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Font Awesome Icons -->
@@ -846,38 +847,38 @@
                         <p class="text-xs text-gray-500 mt-1">เพิ่มบัญชีผู้ใช้งาน บันทึกชื่อ-นามสกุล ตำแหน่ง เปลี่ยนรหัสผ่าน และกำหนดสิทธิ์ View / Edit / Delete</p>
                     </div>
 
-                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                        <!-- Add New User Form -->
-                        <form id="add-user-form" class="bg-gray-50 p-5 rounded-xl border border-gray-200 space-y-3.5 h-fit">
+                    <div class="space-y-8">
+                        <!-- Add New User Form (Horizontal Layout & No Autofill) -->
+                        <form id="add-user-form" autocomplete="off" class="bg-gray-50 p-5 rounded-xl border border-gray-200 space-y-4">
                             <h4 class="font-bold text-sm text-gray-800 border-b border-gray-200 pb-2">เพิ่มผู้ใช้งานใหม่ (Add User)</h4>
-                            <div>
-                                <label class="block text-xs font-semibold text-gray-600 mb-1">ชื่อ - นามสกุล (Full Name) *</label>
-                                <input type="text" id="new-user-fullname" required placeholder="เช่น นายสมชาย ใจดี" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-semibold text-gray-600 mb-1">ตำแหน่ง (Position) *</label>
-                                <input type="text" id="new-user-position" required placeholder="เช่น เจ้าหน้าที่รับเรื่องร้องเรียน" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white">
-                            </div>
-                            <div class="grid grid-cols-2 gap-3">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                                <div>
+                                    <label class="block text-xs font-semibold text-gray-600 mb-1">ชื่อ - นามสกุล (Full Name) *</label>
+                                    <input type="text" id="new-user-fullname" name="new_user_fullname_no_autofill" autocomplete="off" readonly onfocus="this.removeAttribute('readonly');" required placeholder="เช่น นายสมชาย ใจดี" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-gray-600 mb-1">ตำแหน่ง (Position) *</label>
+                                    <input type="text" id="new-user-position" name="new_user_position_no_autofill" autocomplete="off" readonly onfocus="this.removeAttribute('readonly');" required placeholder="เช่น เจ้าหน้าที่รับเรื่องร้องเรียน" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white">
+                                </div>
                                 <div>
                                     <label class="block text-xs font-semibold text-gray-600 mb-1">Username *</label>
-                                    <input type="text" id="new-user-username" required placeholder="เช่น somchai" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white">
+                                    <input type="text" id="new-user-username" name="new_user_username_no_autofill" autocomplete="off" readonly onfocus="this.removeAttribute('readonly');" required placeholder="เช่น somchai" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white">
                                 </div>
                                 <div>
                                     <label class="block text-xs font-semibold text-gray-600 mb-1">Password *</label>
-                                    <input type="password" id="new-user-password" required placeholder="••••••••" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white">
+                                    <input type="password" id="new-user-password" name="new_user_password_no_autofill" autocomplete="new-password" readonly onfocus="this.removeAttribute('readonly');" required placeholder="••••••••" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-gray-600 mb-1">บทบาท (Role)</label>
+                                    <select id="new-user-role" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white">
+                                        <option value="User">User (ผู้ใช้งานทั่วไป)</option>
+                                        <option value="Admin">Admin (ผู้ดูแลระบบ)</option>
+                                    </select>
                                 </div>
                             </div>
-                            <div>
-                                <label class="block text-xs font-semibold text-gray-600 mb-1">บทบาท (Role)</label>
-                                <select id="new-user-role" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white">
-                                    <option value="User">User (ผู้ใช้งานทั่วไป)</option>
-                                    <option value="Admin">Admin (ผู้ดูแลระบบ)</option>
-                                </select>
-                            </div>
-                            <div class="pt-1">
-                                <span class="block text-xs font-semibold text-gray-600 mb-2">สิทธิ์การใช้งาน (Permissions):</span>
-                                <div class="flex items-center space-x-4 text-xs">
+                            <div class="pt-1 flex flex-wrap items-center justify-between gap-4 border-t border-gray-200/70">
+                                <div class="flex flex-wrap items-center gap-4 text-xs">
+                                    <span class="font-semibold text-gray-600">สิทธิ์การใช้งาน (Permissions):</span>
                                     <label class="flex items-center space-x-1.5 cursor-pointer">
                                         <input type="checkbox" id="perm-view" checked class="rounded text-centralRed focus:ring-centralRed">
                                         <span>ดูได้ (View)</span>
@@ -891,14 +892,14 @@
                                         <span>ลบได้ (Delete)</span>
                                     </label>
                                 </div>
+                                <button type="submit" class="w-full sm:w-auto px-6 bg-centralNavy hover:bg-slate-800 text-white py-2.5 rounded-lg text-xs font-semibold transition shadow-sm">
+                                    + เพิ่มผู้ใช้งานเข้าระบบ
+                                </button>
                             </div>
-                            <button type="submit" class="w-full bg-centralNavy hover:bg-slate-800 text-white py-2.5 rounded-lg text-xs font-semibold transition shadow-sm mt-2">
-                                + เพิ่มผู้ใช้งานเข้าระบบ
-                            </button>
                         </form>
 
                         <!-- Users Table -->
-                        <div class="lg:col-span-2 overflow-x-auto">
+                        <div class="overflow-x-auto">
                             <table class="w-full text-left border-collapse">
                                 <thead>
                                     <tr class="bg-gray-50 border-y border-gray-200 text-xs font-semibold text-gray-500 uppercase">
@@ -2042,6 +2043,11 @@
             // Render Users Table with Full Name, Position, Edit (Pencil) & Delete icons
             const usersTbody = document.getElementById('users-table-body');
             if (!usersTbody) return;
+            const addUserForm = document.getElementById('add-user-form');
+            if (addUserForm) {
+                addUserForm.reset();
+                document.getElementById('perm-view').checked = true;
+            }
             usersTbody.innerHTML = appState.users.map(u => `
                 <tr class="hover:bg-gray-50">
                     <td class="py-3 px-4">
